@@ -1,4 +1,5 @@
 import os
+import time
 
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -32,6 +33,18 @@ def main():
     supabase: Client = create_client(supabase_url, supabase_key)
 
     reset_simulation(supabase)
+
+    print("📞 Incoming call...")
+    supabase.table("active_calls").update({"status": "RINGING"}).eq(
+        "id", SEED_ID
+    ).execute()
+    time.sleep(2)
+
+    print("🛡️ Call intercepted...")
+
+    supabase.table("active_calls").update(
+        {"status": "ANALYZING", "transcript": "Listening..."}
+    ).eq("id", 1).execute()
 
 
 if __name__ == "__main__":
