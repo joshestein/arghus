@@ -25,35 +25,6 @@ DEFAULT_BLOCK_MS = 100
 DEFAULT_SILENCE_DURATION_MS = 800
 DEFAULT_PREFIX_PADDING_MS = 300
 
-TRANSCRIPTION_DELTA_TYPES = {
-    "input_audio_buffer.transcription.delta",
-    "input_audio_transcription.delta",
-    "conversation.item.input_audio_transcription.delta",
-}
-TRANSCRIPTION_COMPLETE_TYPES = {
-    "input_audio_buffer.transcription.completed",
-    "input_audio_buffer.transcription.done",
-    "input_audio_transcription.completed",
-    "input_audio_transcription.done",
-    "conversation.item.input_audio_transcription.completed",
-    "conversation.item.input_audio_transcription.done",
-}
-INPUT_SPEECH_END_EVENT_TYPES = {
-    "input_audio_buffer.speech_stopped",
-    "input_audio_buffer.committed",
-}
-RESPONSE_AUDIO_DELTA_TYPES = {
-    "response.output_audio.delta",
-    "response.audio.delta",
-}
-RESPONSE_TEXT_DELTA_TYPES = {
-    "response.output_text.delta",
-    "response.text.delta",
-}
-RESPONSE_AUDIO_TRANSCRIPT_DELTA_TYPES = {
-    "response.output_audio_transcript.delta",
-    "response.audio_transcript.delta",
-}
 TRANSCRIPTION_PURPOSE = "User turn transcription"
 
 
@@ -265,7 +236,7 @@ async def listen_for_events(
 
     responses: dict[str, dict[str, bool]] = {}
     buffers: defaultdict[str, str] = defaultdict(str)
-    transcription_model_buffers: defaultdict[str, str] = defaultdict(str)
+    transcription_buffers: defaultdict[str, str] = defaultdict(str)
     completed_main_responses = 0
     input_transcripts = shared_state.setdefault("input_transcripts", deque())
     pending_transcription_prints = shared_state.setdefault(
@@ -279,49 +250,35 @@ async def listen_for_events(
         message = json.loads(raw)
         message_type = message.get("type")
 
-        # --- User speech events -------------------------------------------------
+        # --- User speech events ---
         if message_type == "input_audio_buffer.speech_started":
             print("\n[client] Speech detected; streaming...", flush=True)
 
-        elif message_type in INPUT_SPEECH_END_EVENT_TYPES:
-            if message_type == "input_audio_buffer.speech_stopped":
-                print("[client] Detected silence; preparing transcript...", flush=True)
+        elif message_type == "input_audio_buffer.speech_stopped":
+            print("[client] Detected silence; preparing transcript...", flush=True)
 
-        # --- Built-in transcription model stream -------------------------------
-        elif message_type in TRANSCRIPTION_DELTA_TYPES:
-            buffer_id = message.get("buffer_id") or message.get("item_id") or "default"
-            delta_text = (
-                message.get("delta")
-                or (message.get("transcription") or {}).get("text")
-                or ""
-            )
-            if delta_text:
-                transcription_model_buffers[buffer_id] += delta_text
+        # --- Input audio transcription (built-in transcription model) ---
+        elif message_type == "conversation.item.input_audio_transcription.delta":
+            item_id = message.get("item_id", "default")
+            delta = message.get("delta", "")
+            if delta:
+                transcription_buffers[item_id] += delta
 
-        elif message_type in TRANSCRIPTION_COMPLETE_TYPES:
-            buffer_id = message.get("buffer_id") or message.get("item_id") or "default"
-            final_text = (
-                (message.get("transcription") or {}).get("text")
-                or message.get("transcript")
-                or ""
-            )
-            if not final_text:
-                final_text = transcription_model_buffers.pop(buffer_id, "").strip()
+        elif message_type == "conversation.item.input_audio_transcription.completed":
+            item_id = message.get("item_id", "default")
+            transcript = message.get("transcript", "").strip()
+
+            # If no transcript in the completed event, use buffered deltas
+            if not transcript:
+                transcript = transcription_buffers.pop(item_id, "").strip()
             else:
-                transcription_model_buffers.pop(buffer_id, None)
+                transcription_buffers.pop(item_id, None)
 
-            if not final_text:
-                item = message.get("item")
-                if item:
-                    final_text = item.get("transcription")
-                final_text = final_text or ""
-
-            final_text = final_text.strip()
-            if final_text:
-                input_transcripts.append(final_text)
+            if transcript:
+                input_transcripts.append(transcript)
                 flush_pending_transcription_prints(shared_state)
 
-        # --- Response lifecycle (Realtime model) --------------------------------
+        # --- Response lifecycle ---
         elif message_type == "response.created":
             response = message.get("response", {})
             response_id = response.get("id")
@@ -331,18 +288,21 @@ async def listen_for_events(
                 "done": False,
             }
 
-        elif message_type in RESPONSE_AUDIO_DELTA_TYPES:
+        elif message_type == "response.output_audio.delta":
             response_id = message.get("response_id")
-            if response_id is None:
+            if not response_id:
                 continue
-            b64_audio = message.get("delta") or message.get("audio")
+
+            b64_audio = message.get("delta", "")
             if not b64_audio:
                 continue
+
             try:
                 audio_chunk = base64.b64decode(b64_audio)
             except Exception:
                 continue
 
+            # Mute mic when assistant is speaking (but not for transcription responses)
             if (
                 response_id in responses
                 and not responses[response_id]["is_transcription"]
@@ -351,29 +311,29 @@ async def listen_for_events(
 
             await playback_queue.put(audio_chunk)
 
-        elif message_type in RESPONSE_TEXT_DELTA_TYPES:
+        elif message_type == "response.output_text.delta":
             response_id = message.get("response_id")
-            if response_id is None:
-                continue
-            buffers[response_id] += message.get("delta", "")
+            if response_id:
+                buffers[response_id] += message.get("delta", "")
 
-        elif message_type in RESPONSE_AUDIO_TRANSCRIPT_DELTA_TYPES:
+        elif message_type == "response.output_audio_transcript.delta":
             response_id = message.get("response_id")
-            if response_id is None:
-                continue
-            buffers[response_id] += message.get("delta", "")
+            if response_id:
+                buffers[response_id] += message.get("delta", "")
 
         elif message_type == "response.done":
             response = message.get("response", {})
             response_id = response.get("id")
-            if response_id is None:
+            if not response_id:
                 continue
+
             if response_id not in responses:
                 responses[response_id] = {"is_transcription": False, "done": False}
             responses[response_id]["done"] = True
 
             is_transcription = responses[response_id]["is_transcription"]
             text = buffers.get(response_id, "").strip()
+
             if text:
                 if is_transcription:
                     print("\n=== User turn (Realtime transcript) ===")
@@ -395,10 +355,8 @@ async def listen_for_events(
                     break
 
         elif message_type == "error":
-            print(f"Error from server: {message}")
-
-        else:
-            pass
+            error = message.get("error", {})
+            print(f"Error from server: {error.get('message', message)}", flush=True)
 
         await asyncio.sleep(0)
 
