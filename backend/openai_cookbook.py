@@ -7,7 +7,6 @@ from collections import deque, defaultdict
 import websockets
 import sounddevice as sd
 from dotenv import load_dotenv
-from websockets.client import ClientConnection
 from websockets.legacy.client import WebSocketClientProtocol
 
 load_dotenv()
@@ -217,7 +216,7 @@ async def send_audio_from_queue(
 
 
 async def stream_microphone_audio(
-    ws: ClientConnection,
+    ws: WebSocketClientProtocol,
     stop_event: asyncio.Event,
     shared_state: dict,
     block_ms: int = DEFAULT_BLOCK_MS,
@@ -278,7 +277,7 @@ def flush_pending_transcription_prints(shared_state: dict) -> None:
 
 
 async def listen_for_events(
-    ws: ClientConnection,
+    ws: WebSocketClientProtocol,
     stop_event: asyncio.Event,
     transcription_instructions: str,
     max_turns: int | None,
