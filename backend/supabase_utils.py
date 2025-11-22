@@ -1,4 +1,7 @@
+import asyncio
 import os
+
+from realtime import AsyncRealtimeChannel
 from supabase import acreate_client, create_client
 
 
@@ -26,3 +29,9 @@ def _get_supabase_credentials():
         raise ValueError("SUPABASE_PUBLISHABLE_KEY environment variable is not set")
 
     return supabase_url, supabase_key
+
+
+def broadcast_event(channel: AsyncRealtimeChannel, event: str, payload: dict):
+    """Sends `text` to supabase real-time channel."""
+    print(f"📡 Broadcasting: {payload}")
+    asyncio.create_task(channel.send_broadcast(event, payload))

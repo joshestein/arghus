@@ -4,7 +4,11 @@ from dotenv import load_dotenv
 from realtime import AsyncRealtimeChannel
 from supabase import Client, AsyncClient
 
-from supabase_utils import create_async_supabase_client, create_supabase_client
+from supabase_utils import (
+    create_async_supabase_client,
+    create_supabase_client,
+    broadcast_event,
+)
 
 load_dotenv()
 
@@ -22,10 +26,6 @@ REALTIME_EVENT_TRANSCRIPT = "transcript"
 REALTIME_EVENT_THREAT = "threat"
 
 
-def broadcast_event(channel: AsyncRealtimeChannel, event: str, payload: dict):
-    """Sends `text` to supabase real-time channel."""
-    print(f"📡 Broadcasting: {payload}")
-    asyncio.create_task(channel.send_broadcast(event, payload))
 
 
 def reset_simulation(supabase: Client):
