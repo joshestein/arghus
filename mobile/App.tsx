@@ -5,7 +5,7 @@ import { supabase } from "./lib/supabase";
 
 type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED";
 
-export default function App() {
+const MainPage = () => {
   const [status, setStatus] = useState<Status>("IDLE");
   const [transcript, setTranscript] = useState("");
 
@@ -117,6 +117,10 @@ export default function App() {
       <StatusBar style="auto" />
     </View>
   );
+};
+
+export default function App() {
+  return <MainPage />;
 }
 
 const styles = StyleSheet.create({
