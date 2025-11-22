@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { supabase } from "./lib/supabase";
 
-type Status = "IDLE" | "LISTENING" | "THREAT_DETECTED";
+type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED";
 
 export default function App() {
   const [status, setStatus] = useState<Status>("IDLE");
