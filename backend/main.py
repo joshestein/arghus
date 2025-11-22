@@ -5,6 +5,8 @@ from supabase import create_client, Client
 
 load_dotenv()
 
+SEED_ID = 1
+
 
 def reset_simulation(supabase: Client):
     print("Resetting state...")
@@ -15,7 +17,7 @@ def reset_simulation(supabase: Client):
         "threat_reason": "",
         "suggested_question": "",
     }
-    supabase.table("active_calls").update(data).eq("id", 1).execute()
+    supabase.table("active_calls").update(data).eq("id", SEED_ID).execute()
 
 
 def main():
