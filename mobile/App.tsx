@@ -8,7 +8,7 @@ type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED";
 type ThreatData = {
   question: string;
   reason: string;
-  score: number;
+  confidence: number;
 };
 
 const MainPage = () => {
@@ -95,7 +95,7 @@ const MainPage = () => {
               <Text style={{ fontSize: 30 }}>⚠️</Text>
               <View style={{ marginLeft: 10 }}>
                 <Text style={styles.threatTitle}>RISK DETECTED</Text>
-                <Text style={styles.threatSubtitle}>Confidence Score: {threatData.score}%</Text>
+                <Text style={styles.threatSubtitle}>Confidence Score: {threatData.confidence}%</Text>
               </View>
             </View>
 
