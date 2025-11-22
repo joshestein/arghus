@@ -78,6 +78,9 @@ async def main():
     await channel.subscribe()
     await simulate_transcription(channel)
 
+    supabase.table("active_calls").update({"status": "THREAT_DETECTED"}).eq(
+        "id", SEED_ID
+    ).execute()
 
 if __name__ == "__main__":
     asyncio.run(main())
