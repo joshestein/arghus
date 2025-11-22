@@ -134,6 +134,8 @@ def build_session_update(
         "output_modalities": ["audio"],
         "instructions": instructions,
         "audio": audio_config,
+        "tools": [REPORT_THREAT_TOOL],
+        "tool_choice": "auto",
     }
 
     return {
