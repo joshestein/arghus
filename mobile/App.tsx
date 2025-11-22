@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "./lib/supabase";
 
 type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED";
@@ -120,7 +121,11 @@ const MainPage = () => {
 };
 
 export default function App() {
-  return <MainPage />;
+  return (
+    <SafeAreaProvider>
+      <MainPage />
+    </SafeAreaProvider>
+  );
 }
 
 const styles = StyleSheet.create({
