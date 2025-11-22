@@ -7,6 +7,7 @@ import { supabase } from "./lib/supabase";
 type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED";
 type ThreatData = {
   question: string;
+  transcript: string;
   reason: string;
   confidence: number;
 };
@@ -106,10 +107,10 @@ const MainPage = () => {
           </View>
 
           {/* Transcript Preview (Dimmed) */}
-          <View style={[styles.transcriptContainer, { opacity: 0.5, maxHeight: 100 }]}>
-            <Text style={styles.transcriptText} numberOfLines={3}>
-              {transcript}
-            </Text>
+          <View style={[styles.transcriptContainer, { opacity: 0.5, marginBottom: 0 }]}>
+            <ScrollView style={styles.transcriptBox} contentContainerStyle={{ paddingBottom: 20 }}>
+              <Text style={styles.transcriptText}>{threatData.transcript}</Text>
+            </ScrollView>
           </View>
 
           {/* Recommendation / Action */}
