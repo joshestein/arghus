@@ -7,7 +7,11 @@ from collections import defaultdict
 import websockets
 import sounddevice as sd
 from dotenv import load_dotenv
+from realtime import AsyncRealtimeChannel
+from supabase import AsyncClient, Client
 from websockets.legacy.client import WebSocketClientProtocol
+
+from supabase_utils import broadcast_event
 
 load_dotenv()
 
@@ -385,6 +389,26 @@ async def run_realtime_session(
             await asyncio.gather(
                 listener_task, mic_task, playback_task, return_exceptions=True
             )
+
+
+async def send_supabase_update(
+    supabase: AsyncClient | None,
+    channel: AsyncRealtimeChannel | None,
+    event,
+    payload: dict,
+) -> None:
+    print(payload)
+    if channel is not None:
+        broadcast_event(
+            channel,
+            event,
+            payload=payload,
+        )
+
+    if supabase is not None:
+        await supabase.table("active_calls").update({"status": "THREAT_DETECTED"}).eq(
+            "id", 1
+        ).execute()
 
 
 if __name__ == "__main__":
