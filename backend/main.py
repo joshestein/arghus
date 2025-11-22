@@ -6,6 +6,18 @@ from supabase import create_client, Client
 load_dotenv()
 
 
+def reset_simulation(supabase: Client):
+    print("Resetting state...")
+    data = {
+        "status": "IDLE",
+        "transcript": "",
+        "threat_score": 0,
+        "threat_reason": "",
+        "suggested_question": "",
+    }
+    supabase.table("active_calls").update(data).eq("id", 1).execute()
+
+
 def main():
     supabase_url = os.environ.get("SUPABASE_URL")
     if supabase_url is None:
@@ -17,8 +29,7 @@ def main():
 
     supabase: Client = create_client(supabase_url, supabase_key)
 
-    active_calls = supabase.table("active_calls").select("*").execute()
-    print(active_calls.data)
+    reset_simulation(supabase)
 
 
 if __name__ == "__main__":
