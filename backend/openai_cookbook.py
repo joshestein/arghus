@@ -251,9 +251,14 @@ async def listen_for_events(
                 transcription_buffers.pop(item_id, None)
 
             if transcript:
-                print("\n=== User turn (Transcription) ===")
-                print(transcript, flush=True)
-                print()
+                print("\n=== User turn (Transcription) ===\n")
+                print(transcript)
+                await send_supabase_update(
+                    None,
+                    shared_state.get("supabase_channel"),
+                    "transcript",
+                    {"text": transcript},
+                )
 
         elif message_type == "response.output_audio.delta":
             response_id = message.get("response_id")
@@ -327,6 +332,8 @@ async def run_realtime_session(
     idle_timeout_ms: int | None = None,
     max_turns: int | None = None,
     timeout_seconds: int = 0,
+    supabase: AsyncClient | None = None,
+    supabase_channel: AsyncRealtimeChannel | None = None,
 ) -> None:
     """Connect to the Realtime API, stream audio both ways, and print transcripts."""
     api_key = api_key or os.environ.get("OPENAI_API_KEY")
@@ -352,6 +359,8 @@ async def run_realtime_session(
     playback_queue: asyncio.Queue = asyncio.Queue()
     shared_state: dict = {
         "mute_mic": False,
+        "supabase_client": supabase,
+        "supabase_channel": supabase_channel,
     }
 
     async with websockets.connect(
