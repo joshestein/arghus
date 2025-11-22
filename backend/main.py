@@ -21,10 +21,10 @@ REALTIME_CHANNEL_NAME = "live_call"
 REALTIME_EVENT_NAME = "transcription"
 
 
-def broadcast_event(channel: AsyncRealtimeChannel, payload: dict):
+def broadcast_event(channel: AsyncRealtimeChannel, event: str, payload: dict):
     """Sends `text` to supabase real-time channel."""
     print(f"📡 Broadcasting: {payload}")
-    asyncio.create_task(channel.send_broadcast(REALTIME_EVENT_NAME, payload))
+    asyncio.create_task(channel.send_broadcast(event, payload))
 
 
 def reset_simulation(supabase: Client):
