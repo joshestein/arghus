@@ -41,7 +41,6 @@ Follow the instructions and output format below.
 Do not summarize or paraphrase other turns beyond the latest user utterance. The response must be the literal transcript of the latest user utterance.
 """
 
-DEFAULT_MODEL = "gpt-realtime"
 DEFAULT_VOICE = "marin"
 DEFAULT_SAMPLE_RATE = 24_000
 DEFAULT_BLOCK_MS = 100
@@ -428,8 +427,6 @@ async def listen_for_events(
 
 async def run_realtime_session(
     api_key: str | None = None,
-    server: str = "wss://api.openai.com/v1/realtime",
-    model: str = DEFAULT_MODEL,
     voice: str = DEFAULT_VOICE,
     instructions: str = SYSTEM_PROMPT,
     transcription_instructions: str = REALTIME_MODEL_TRANSCRIPTION_PROMPT,
@@ -446,7 +443,7 @@ async def run_realtime_session(
     if api_key is None:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-    url = f"{server}?model={model}"
+    url = "wss://api.openai.com/v1/realtime?model=gpt-realtime"
 
     headers = {
         "Authorization": f"Bearer {api_key}",
