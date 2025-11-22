@@ -18,7 +18,7 @@ Don't call dad, just send the money to this account number...
 """
 
 REALTIME_CHANNEL_NAME = "live_call"
-REALTIME_EVENT_NAME = "transcription"
+REALTIME_EVENT_TRANSCRIPT = "transcript"
 
 
 def broadcast_event(channel: AsyncRealtimeChannel, event: str, payload: dict):
@@ -44,7 +44,9 @@ async def simulate_transcription(channel: AsyncRealtimeChannel):
     for i, word in enumerate(LIVE_TRANSCRIPT.split()):
         if i % 5 == 0:  # Update DB every 5 words to avoid rate limit
             current_transcript += " " + word
-            broadcast_event(channel, {"text": current_transcript})
+            broadcast_event(
+                channel, REALTIME_EVENT_TRANSCRIPT, {"text": current_transcript}
+            )
         else:
             current_transcript += " " + word
 
