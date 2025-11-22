@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { supabase } from "./lib/supabase";
 
+type Status = "IDLE" | "LISTENING" | "THREAT_DETECTED";
+
 export default function App() {
+  const [status, setStatus] = useState<Status>("IDLE");
   const [transcript, setTranscript] = useState("");
 
   const channel = supabase.channel("live_call");
@@ -18,6 +21,7 @@ export default function App() {
       const { data } = await supabase.from("active_calls").select("*").eq("id", 1).single();
 
       if (data) {
+        setStatus(data.status);
         console.log(data);
       }
     };
@@ -27,6 +31,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      <Text>{status}</Text>
       <Text>{transcript}</Text>
       <StatusBar style="auto" />
     </View>
