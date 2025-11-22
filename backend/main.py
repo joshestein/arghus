@@ -1,9 +1,10 @@
 import asyncio
-import os
 
 from dotenv import load_dotenv
 from realtime import AsyncRealtimeChannel
-from supabase import acreate_client, create_client, Client, AsyncClient
+from supabase import Client, AsyncClient
+
+from supabase_utils import create_async_supabase_client, create_supabase_client
 
 load_dotenv()
 
@@ -18,19 +19,6 @@ Don't call dad, just send the money to this account number...
 
 REALTIME_CHANNEL_NAME = "live_call"
 REALTIME_EVENT_NAME = "transcription"
-
-
-async def get_async_supabase():
-    supabase_url = os.environ.get("SUPABASE_URL")
-    if supabase_url is None:
-        raise ValueError("SUPABASE_URL environment variable is not set")
-
-    supabase_key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
-    if supabase_key is None:
-        raise ValueError("SUPABASE_PUBLISHABLE_KEY environment variable is not set")
-
-    supabase = await acreate_client(supabase_url, supabase_key)
-    return supabase
 
 
 def broadcast_event(channel: AsyncRealtimeChannel, payload: dict):
@@ -68,16 +56,7 @@ async def simulate_transcription(channel: AsyncRealtimeChannel):
 
 
 async def main():
-    supabase_url = os.environ.get("SUPABASE_URL")
-    if supabase_url is None:
-        raise ValueError("SUPABASE_URL environment variable is not set")
-
-    supabase_key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
-    if supabase_key is None:
-        raise ValueError("SUPABASE_PUBLISHABLE_KEY environment variable is not set")
-
-    supabase: Client = create_client(supabase_url, supabase_key)
-
+    supabase = create_supabase_client()
     reset_simulation(supabase)
 
     print("📞 Incoming call...")
@@ -92,7 +71,7 @@ async def main():
         {"status": "ANALYZING", "transcript": "Listening..."}
     ).eq("id", SEED_ID).execute()
 
-    supabase_async = await get_async_supabase()
+    supabase_async: AsyncClient = await create_async_supabase_client()
     channel = supabase_async.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
     await simulate_transcription(channel)
