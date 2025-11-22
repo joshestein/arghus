@@ -291,6 +291,13 @@ async def listen_for_events(
                 print(text, flush=True)
                 print()
 
+            output = response.get("output")
+            if output and len(output) > 0 and output[0].get("type") == "function_call":
+                name = output[0].get("name")
+                args = json.loads(output[0].get("arguments", "{}"))
+                if name == "report_threat":
+                    print(f"🚨 Threat detected: {args}", flush=True)
+
             shared_state["mute_mic"] = False
             completed_main_responses += 1
 
