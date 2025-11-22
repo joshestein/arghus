@@ -12,12 +12,6 @@ from websockets.legacy.client import WebSocketClientProtocol
 
 load_dotenv()
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-OPENAI_WS_URL = "wss://api.openai.com/v1/realtime?model=gpt-realtime"
-
-if OPENAI_API_KEY is None:
-    raise ValueError("OPENAI_API_KEY environment variable is not set")
-
 SYSTEM_PROMPT = """
 You are a security bodyguard listening to a phone call.
 1. Listen for high-pressure scam tactics (bail money, gift cards, kidnapped).
@@ -475,6 +469,11 @@ async def run_realtime_session(
 ) -> None:
     """Connect to the Realtime API, stream audio both ways, and print transcripts."""
     api_key = api_key or os.environ.get("OPENAI_API_KEY")
+    if api_key is None:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+
+    url = f"{server}?model={model}"
+
     headers = {
         "Authorization": f"Bearer {api_key}",
     }
@@ -497,7 +496,7 @@ async def run_realtime_session(
     }
 
     async with websockets.connect(
-        OPENAI_WS_URL, additional_headers=headers, proxy=None, max_size=None
+        url, additional_headers=headers, proxy=None, max_size=None
     ) as ws:
         await ws.send(json.dumps(session_update_payload))
 
@@ -535,5 +534,4 @@ async def run_realtime_session(
 
 
 if __name__ == "__main__":
-    # asyncio.run(connect_realtime())
     asyncio.run(run_realtime_session())
