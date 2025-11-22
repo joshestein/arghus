@@ -2,7 +2,7 @@ import asyncio
 import base64
 import json
 import os
-from collections import deque, defaultdict
+from collections import defaultdict
 
 import websockets
 import sounddevice as sd
@@ -204,27 +204,6 @@ async def stream_microphone_audio(
     await sender
 
 
-def flush_pending_transcription_prints(shared_state: dict) -> None:
-    """Whenever we've printed a realtime transcript, print the matching transcription-model output."""
-
-    pending_prints: deque | None = shared_state.get("pending_transcription_prints")
-    input_transcripts: deque | None = shared_state.get("input_transcripts")
-
-    if not pending_prints or not input_transcripts:
-        return
-
-    while pending_prints and input_transcripts:
-        comparison_text = input_transcripts.popleft()
-        pending_prints.popleft()
-        print("=== User turn (Transcription model) ===")
-        if comparison_text:
-            print(comparison_text, flush=True)
-            print()
-        else:
-            print("<not available>", flush=True)
-            print()
-
-
 async def listen_for_events(
     ws: WebSocketClientProtocol,
     stop_event: asyncio.Event,
@@ -238,10 +217,6 @@ async def listen_for_events(
     buffers: defaultdict[str, str] = defaultdict(str)
     transcription_buffers: defaultdict[str, str] = defaultdict(str)
     completed_main_responses = 0
-    input_transcripts = shared_state.setdefault("input_transcripts", deque())
-    pending_transcription_prints = shared_state.setdefault(
-        "pending_transcription_prints", deque()
-    )
 
     async for raw in ws:
         if stop_event.is_set():
@@ -275,8 +250,9 @@ async def listen_for_events(
                 transcription_buffers.pop(item_id, None)
 
             if transcript:
-                input_transcripts.append(transcript)
-                flush_pending_transcription_prints(shared_state)
+                print("\n=== User turn (Transcription) ===")
+                print(transcript, flush=True)
+                print()
 
         # --- Response lifecycle ---
         elif message_type == "response.created":
@@ -339,8 +315,6 @@ async def listen_for_events(
                     print("\n=== User turn (Realtime transcript) ===")
                     print(text, flush=True)
                     print()
-                    pending_transcription_prints.append(object())
-                    flush_pending_transcription_prints(shared_state)
                 else:
                     print("\n=== Assistant response ===")
                     print(text, flush=True)
@@ -397,8 +371,6 @@ async def run_realtime_session(
     playback_queue: asyncio.Queue = asyncio.Queue()
     shared_state: dict = {
         "mute_mic": False,
-        "input_transcripts": deque(),
-        "pending_transcription_prints": deque(),
     }
 
     async with websockets.connect(
