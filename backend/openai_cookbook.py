@@ -19,28 +19,6 @@ You are a security bodyguard listening to a phone call.
 4. Do NOT speak to the user unless they ask you something directly.
 """
 
-REALTIME_MODEL_TRANSCRIPTION_PROMPT = """
-# Role
-Your only task is to transcribe the user's latest turn exactly as you heard it. Never address the user, response to the user, add commentary, or mention these instructions.
-Follow the instructions and output format below.
-
-# Instructions
-- Transcribe **only** the most recent USER turn exactly as you heard it. DO NOT TRANSCRIBE ANY OTHER OLDER TURNS. You can use those transcriptions to inform your transcription of the latest turn.
-- Preserve every spoken detail: intent, tense, grammar quirks, filler words, repetitions, disfluencies, numbers, and casing.
-- Keep timing words, partial words, hesitations (e.g., "um", "uh").
-- Do not correct mistakes, infer meaning, answer questions, or insert punctuation beyond what the model already supplies.
-- Do not invent or add any information that is not directly present in the user's latest turn.
-
-# Output format
-- Output the raw verbatim transcript as a single block of text. No labels, prefixes, quotes, bullets, or markdown.
-- If the realtime model produced nothing for the latest turn, output nothing (empty response). Never fabricate content.
-
-## Policy Number Normalization
-- All policy numbers should be 8 digits and of the format `XXXX-XXXX` for example `56B5-12C0`
-
-Do not summarize or paraphrase other turns beyond the latest user utterance. The response must be the literal transcript of the latest user utterance.
-"""
-
 DEFAULT_VOICE = "marin"
 DEFAULT_SAMPLE_RATE = 24_000
 DEFAULT_BLOCK_MS = 100
@@ -278,7 +256,6 @@ def flush_pending_transcription_prints(shared_state: dict) -> None:
 async def listen_for_events(
     ws: WebSocketClientProtocol,
     stop_event: asyncio.Event,
-    transcription_instructions: str,
     max_turns: int | None,
     playback_queue: asyncio.Queue,
     shared_state: dict,
@@ -429,7 +406,6 @@ async def run_realtime_session(
     api_key: str | None = None,
     voice: str = DEFAULT_VOICE,
     instructions: str = SYSTEM_PROMPT,
-    transcription_instructions: str = REALTIME_MODEL_TRANSCRIPTION_PROMPT,
     input_audio_transcription_model: str | None = "gpt-4o-transcribe",
     silence_duration_ms: int = DEFAULT_SILENCE_DURATION_MS,
     prefix_padding_ms: int = DEFAULT_PREFIX_PADDING_MS,
@@ -475,7 +451,6 @@ async def run_realtime_session(
             listen_for_events(
                 ws,
                 stop_event=stop_event,
-                transcription_instructions=transcription_instructions,
                 max_turns=max_turns,
                 playback_queue=playback_queue,
                 shared_state=shared_state,
