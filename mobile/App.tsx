@@ -5,9 +5,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "./lib/supabase";
 
 type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED";
+type ThreatData = {
+  question: string;
+  reason: string;
+  score: number;
+};
 
 const MainPage = () => {
   const [status, setStatus] = useState<Status>("IDLE");
+  const [threatData, setThreatData] = useState<ThreatData | null>(null);
   const [transcript, setTranscript] = useState("");
 
   useEffect(() => {
@@ -15,6 +21,13 @@ const MainPage = () => {
     liveCallChannel
       .on("broadcast", { event: "transcript" }, (data) => {
         setTranscript(data.payload.text);
+      })
+      .subscribe();
+
+    liveCallChannel
+      .on("broadcast", { event: "threat" }, (data) => {
+        setStatus("THREAT_DETECTED");
+        setThreatData(data.payload);
       })
       .subscribe();
 
@@ -83,29 +96,26 @@ const MainPage = () => {
       </View>
     );
   }
-  if (status === "THREAT_DETECTED") {
+  if (status === "THREAT_DETECTED" && threatData) {
     return (
       <View style={[styles.container, { backgroundColor: "#5b1d1dff" }]}>
         <Text style={[styles.title, { color: "white", marginTop: 50 }]}>⚠️ Possible Scam</Text>
 
         <View style={styles.card}>
           <Text style={styles.cardLabel}>THREAT ANALYSIS:</Text>
-          {/* <Text style={styles.cardValue}>Confidence: {threatData?.score || 75}%</Text> */}
-          <Text style={styles.cardValue}>Reason: Financial Urgency + Voice Mismatch</Text>
+          <Text style={styles.cardValue}>Confidence: {threatData.score}%</Text>
+          <Text style={styles.cardValue}>{threatData.reason}</Text>
         </View>
 
         <ScrollView style={styles.transcriptScroll}>
-          <Text style={{ color: "#ccc" }}>... {transcript}</Text>
+          <Text style={{ color: "#ccc" }}>{transcript}</Text>
         </ScrollView>
 
         <View style={styles.actionArea}>
-          <Text style={{ color: "white", marginBottom: 10, textAlign: "center" }}>Recommended Action:</Text>
-          {/* <TouchableOpacity style={styles.button} onPress={sendInjectAction}>
-            <Text style={styles.buttonText}>INJECT CHALLENGE QUESTION</Text>
-          </TouchableOpacity>
-          <Text style={{ color: "white", marginTop: 10, textAlign: "center", fontSize: 12 }}>
-            "{threatData?.question || "Ask Secret Question"}"
-          </Text> */}
+          <Text style={{ color: "white", marginBottom: 10, textAlign: "center" }}>Recommended question:</Text>
+          <Text style={{ color: "white", marginTop: 10, textAlign: "center", fontSize: 20, fontWeight: "bold" }}>
+            {threatData.question}
+          </Text>
         </View>
       </View>
     );
