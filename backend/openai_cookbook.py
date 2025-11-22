@@ -29,6 +29,8 @@ DEFAULT_BLOCK_MS = 100
 DEFAULT_SILENCE_DURATION_MS = 800
 DEFAULT_PREFIX_PADDING_MS = 300
 
+REALTIME_EVENT_THREAT = "threat"
+
 
 def build_session_update(
     instructions: str,
@@ -296,15 +298,20 @@ async def listen_for_events(
             text = buffers.get(response_id, "").strip()
 
             if text:
-                print("\n=== Assistant response ===")
-                print(text, flush=True)
-                print()
+                print("\n=== Assistant response ===\n")
+                print(text)
 
             output = response.get("output")
             if output and len(output) > 0 and output[0].get("type") == "function_call":
                 name = output[0].get("name")
                 args = json.loads(output[0].get("arguments", "{}"))
                 if name == "report_threat":
+                    await send_supabase_update(
+                        shared_state.get("supabase_client"),
+                        shared_state.get("supabase_channel"),
+                        REALTIME_EVENT_THREAT,
+                        {**args, "status": "THREAT_DETECTED"},
+                    )
                     print(f"🚨 Threat detected: {args}", flush=True)
 
             shared_state["mute_mic"] = False
