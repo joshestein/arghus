@@ -1,12 +1,42 @@
+import asyncio
 import os
-import time
 
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from realtime import AsyncRealtimeChannel
+from supabase import acreate_client, create_client, Client, AsyncClient
 
 load_dotenv()
 
 SEED_ID = 1
+
+LIVE_TRANSCRIPT = """
+(Sobbing) Hi... it's Mom. I don't have much time. 
+I'm at the police station. My phone was stolen, so I'm using the officer's phone.
+I need you to wire bail money immediately. Please, I'm scared. 
+Don't call dad, just send the money to this account number...
+"""
+
+REALTIME_CHANNEL_NAME = "live_call"
+REALTIME_EVENT_NAME = "transcription"
+
+
+async def get_async_supabase():
+    supabase_url = os.environ.get("SUPABASE_URL")
+    if supabase_url is None:
+        raise ValueError("SUPABASE_URL environment variable is not set")
+
+    supabase_key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
+    if supabase_key is None:
+        raise ValueError("SUPABASE_PUBLISHABLE_KEY environment variable is not set")
+
+    supabase = await acreate_client(supabase_url, supabase_key)
+    return supabase
+
+
+def broadcast_event(channel: AsyncRealtimeChannel, payload: dict):
+    """Sends `text` to supabase real-time channel."""
+    print(f"📡 Broadcasting: {payload}")
+    asyncio.create_task(channel.send_broadcast(REALTIME_EVENT_NAME, payload))
 
 
 def reset_simulation(supabase: Client):
@@ -21,7 +51,23 @@ def reset_simulation(supabase: Client):
     supabase.table("active_calls").update(data).eq("id", SEED_ID).execute()
 
 
-def main():
+async def simulate_transcription(channel: AsyncRealtimeChannel):
+    current_transcript = ""
+    for i, word in enumerate(LIVE_TRANSCRIPT.split()):
+        if i % 5 == 0:  # Update DB every 5 words to avoid rate limit
+            current_transcript += " " + word
+            broadcast_event(channel, {"text": current_transcript})
+        else:
+            current_transcript += " " + word
+
+        await asyncio.sleep(0.15)  # Match reading speed to audio speed
+
+        # Stop "streaming" to indicate alert has been triggered
+        if i == 20:
+            break
+
+
+async def main():
     supabase_url = os.environ.get("SUPABASE_URL")
     if supabase_url is None:
         raise ValueError("SUPABASE_URL environment variable is not set")
@@ -38,7 +84,7 @@ def main():
     supabase.table("active_calls").update({"status": "RINGING"}).eq(
         "id", SEED_ID
     ).execute()
-    time.sleep(2)
+    await asyncio.sleep(1)
 
     print("🛡️ Call intercepted...")
 
@@ -46,6 +92,11 @@ def main():
         {"status": "ANALYZING", "transcript": "Listening..."}
     ).eq("id", SEED_ID).execute()
 
+    supabase_async = await get_async_supabase()
+    channel = supabase_async.channel(REALTIME_CHANNEL_NAME)
+    await channel.subscribe()
+    await simulate_transcription(channel)
+
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
