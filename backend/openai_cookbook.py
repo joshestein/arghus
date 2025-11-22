@@ -25,8 +25,6 @@ DEFAULT_BLOCK_MS = 100
 DEFAULT_SILENCE_DURATION_MS = 800
 DEFAULT_PREFIX_PADDING_MS = 300
 
-TRANSCRIPTION_PURPOSE = "User turn transcription"
-
 
 def build_session_update(
     instructions: str,
@@ -213,7 +211,6 @@ async def listen_for_events(
 ) -> None:
     """Print assistant text + transcripts and coordinate mic muting."""
 
-    responses: dict[str, dict[str, bool]] = {}
     buffers: defaultdict[str, str] = defaultdict(str)
     transcription_buffers: defaultdict[str, str] = defaultdict(str)
     completed_main_responses = 0
@@ -254,16 +251,6 @@ async def listen_for_events(
                 print(transcript, flush=True)
                 print()
 
-        # --- Response lifecycle ---
-        elif message_type == "response.created":
-            response = message.get("response", {})
-            response_id = response.get("id")
-            metadata = response.get("metadata") or {}
-            responses[response_id] = {
-                "is_transcription": metadata.get("purpose") == TRANSCRIPTION_PURPOSE,
-                "done": False,
-            }
-
         elif message_type == "response.output_audio.delta":
             response_id = message.get("response_id")
             if not response_id:
@@ -278,13 +265,7 @@ async def listen_for_events(
             except Exception:
                 continue
 
-            # Mute mic when assistant is speaking (but not for transcription responses)
-            if (
-                response_id in responses
-                and not responses[response_id]["is_transcription"]
-            ):
-                shared_state["mute_mic"] = True
-
+            shared_state["mute_mic"] = True
             await playback_queue.put(audio_chunk)
 
         elif message_type == "response.output_text.delta":
@@ -303,30 +284,19 @@ async def listen_for_events(
             if not response_id:
                 continue
 
-            if response_id not in responses:
-                responses[response_id] = {"is_transcription": False, "done": False}
-            responses[response_id]["done"] = True
-
-            is_transcription = responses[response_id]["is_transcription"]
             text = buffers.get(response_id, "").strip()
 
             if text:
-                if is_transcription:
-                    print("\n=== User turn (Realtime transcript) ===")
-                    print(text, flush=True)
-                    print()
-                else:
-                    print("\n=== Assistant response ===")
-                    print(text, flush=True)
-                    print()
+                print("\n=== Assistant response ===")
+                print(text, flush=True)
+                print()
 
-            if not is_transcription:
-                shared_state["mute_mic"] = False
-                completed_main_responses += 1
+            shared_state["mute_mic"] = False
+            completed_main_responses += 1
 
-                if max_turns is not None and completed_main_responses >= max_turns:
-                    stop_event.set()
-                    break
+            if max_turns is not None and completed_main_responses >= max_turns:
+                stop_event.set()
+                break
 
         elif message_type == "error":
             error = message.get("error", {})
