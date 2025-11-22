@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from realtime import AsyncRealtimeChannel
 from supabase import Client, AsyncClient
 
+from openai_cookbook import run_realtime_session
 from supabase_utils import (
     create_async_supabase_client,
     create_supabase_client,
@@ -23,9 +24,6 @@ Don't call dad, just send the money to this account number...
 
 REALTIME_CHANNEL_NAME = "live_call"
 REALTIME_EVENT_TRANSCRIPT = "transcript"
-REALTIME_EVENT_THREAT = "threat"
-
-
 
 
 def reset_simulation(supabase: Client):
@@ -77,22 +75,9 @@ async def main():
     supabase_async: AsyncClient = await create_async_supabase_client()
     channel = supabase_async.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
-    await simulate_transcription(channel)
-
-    supabase.table("active_calls").update({"status": "THREAT_DETECTED"}).eq(
-        "id", SEED_ID
-    ).execute()
-
-    broadcast_event(
-        channel,
-        REALTIME_EVENT_THREAT,
-        {
-            "status": "THREAT_DETECTED",
-            "score": 75,
-            "reason": "Financial Urgency",
-            "question": "Where did we go for childhood holidays?",
-        },
-    )
+    # Uncomment to simulate transcription streaming
+    # await simulate_transcription(channel)
+    await run_realtime_session(supabase=supabase_async, supabase_channel=channel)
 
 
 if __name__ == "__main__":
