@@ -44,7 +44,7 @@ def main():
 
     supabase.table("active_calls").update(
         {"status": "ANALYZING", "transcript": "Listening..."}
-    ).eq("id", 1).execute()
+    ).eq("id", SEED_ID).execute()
 
 
 if __name__ == "__main__":
