@@ -19,6 +19,7 @@ Don't call dad, just send the money to this account number...
 
 REALTIME_CHANNEL_NAME = "live_call"
 REALTIME_EVENT_TRANSCRIPT = "transcript"
+REALTIME_EVENT_THREAT = "threat"
 
 
 def broadcast_event(channel: AsyncRealtimeChannel, event: str, payload: dict):
@@ -81,6 +82,18 @@ async def main():
     supabase.table("active_calls").update({"status": "THREAT_DETECTED"}).eq(
         "id", SEED_ID
     ).execute()
+
+    broadcast_event(
+        channel,
+        REALTIME_EVENT_THREAT,
+        {
+            "status": "THREAT_DETECTED",
+            "score": 75,
+            "reason": "Financial Urgency",
+            "question": "Where did we go for childhood holidays?",
+        },
+    )
+
 
 if __name__ == "__main__":
     asyncio.run(main())
