@@ -17,6 +17,30 @@ export default function App() {
     .subscribe();
 
   useEffect(() => {
+    const channel = supabase
+      .channel("public:active_calls")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "active_calls",
+        },
+        (payload) => {
+          const newData = payload.new;
+          setStatus(newData.status);
+          if (newData.transcript) setTranscript(newData.transcript);
+        },
+      )
+      .subscribe();
+
+    // Cleanup on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchState = async () => {
       const { data } = await supabase.from("active_calls").select("*").eq("id", 1).single();
 
