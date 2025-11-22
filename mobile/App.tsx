@@ -9,15 +9,15 @@ export default function App() {
   const [status, setStatus] = useState<Status>("IDLE");
   const [transcript, setTranscript] = useState("");
 
-  const channel = supabase.channel("live_call");
-  channel
-    .on("broadcast", { event: "transcript" }, (data) => {
-      setTranscript(data.payload.text);
-    })
-    .subscribe();
-
   useEffect(() => {
-    const channel = supabase
+    const liveCallChannel = supabase.channel("live_call");
+    liveCallChannel
+      .on("broadcast", { event: "transcript" }, (data) => {
+        setTranscript(data.payload.text);
+      })
+      .subscribe();
+
+    const statusChannel = supabase
       .channel("public:active_calls")
       .on(
         "postgres_changes",
@@ -34,9 +34,9 @@ export default function App() {
       )
       .subscribe();
 
-    // Cleanup on unmount
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(liveCallChannel);
+      supabase.removeChannel(statusChannel);
     };
   }, []);
 
