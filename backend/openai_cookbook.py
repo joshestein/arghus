@@ -166,21 +166,6 @@ def build_session_update(
     }
 
 
-def build_transcription_request(transcription_instructions: str) -> dict[str, object]:
-    """Ask the SAME Realtime model for an out-of-band transcript of the latest user turn."""
-    return {
-        "type": "response.create",
-        "response": {
-            "conversation": "none",  # <--- out-of-band
-            "output_modalities": ["text"],
-            "metadata": {
-                "purpose": TRANSCRIPTION_PURPOSE
-            },  # <--- we add metadata so it is easier to identify the event in the logs
-            "instructions": transcription_instructions,
-        },
-    }
-
-
 def encode_audio(chunk: bytes) -> str:
     """Base64-encode a PCM audio chunk for WebSocket transport."""
     return base64.b64encode(chunk).decode("utf-8")
@@ -306,7 +291,6 @@ async def listen_for_events(
     buffers: defaultdict[str, str] = defaultdict(str)
     transcription_model_buffers: defaultdict[str, str] = defaultdict(str)
     completed_main_responses = 0
-    awaiting_transcription_prompt = False
     input_transcripts = shared_state.setdefault("input_transcripts", deque())
     pending_transcription_prints = shared_state.setdefault(
         "pending_transcription_prints", deque()
@@ -322,19 +306,10 @@ async def listen_for_events(
         # --- User speech events -------------------------------------------------
         if message_type == "input_audio_buffer.speech_started":
             print("\n[client] Speech detected; streaming...", flush=True)
-            awaiting_transcription_prompt = True
 
         elif message_type in INPUT_SPEECH_END_EVENT_TYPES:
             if message_type == "input_audio_buffer.speech_stopped":
                 print("[client] Detected silence; preparing transcript...", flush=True)
-
-            # This is where the out-of-band transcription request is sent. <-------
-            if awaiting_transcription_prompt:
-                request_payload = build_transcription_request(
-                    transcription_instructions
-                )
-                await ws.send(json.dumps(request_payload))
-                awaiting_transcription_prompt = False
 
         # --- Built-in transcription model stream -------------------------------
         elif message_type in TRANSCRIPTION_DELTA_TYPES:
