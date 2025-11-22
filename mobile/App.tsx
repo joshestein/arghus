@@ -1,9 +1,18 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { supabase } from "./lib/supabase";
 
 export default function App() {
+  const [transcript, setTranscript] = useState("");
+
+  const channel = supabase.channel("live_call");
+  channel
+    .on("broadcast", { event: "transcript" }, (data) => {
+      setTranscript(data.payload.text);
+    })
+    .subscribe();
+
   useEffect(() => {
     const fetchState = async () => {
       const { data } = await supabase.from("active_calls").select("*").eq("id", 1).single();
@@ -18,7 +27,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+      <Text>{transcript}</Text>
       <StatusBar style="auto" />
     </View>
   );
