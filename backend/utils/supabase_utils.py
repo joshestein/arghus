@@ -71,6 +71,12 @@ async def fetch_challenge(
             "answer": "Maximillian",  # lol never
         }
 
+    elif name == "david":
+        return {
+            "question": "What colour is the best jelly bean?",
+            "answer": "Purple",
+        }
+
     return {
         "question": "When does Gandalf arrive?",
         "answer": "Exactly on time",
