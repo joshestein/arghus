@@ -38,8 +38,8 @@ def build_session_update(
     vad_threshold: float,
     silence_duration_ms: int,
     prefix_padding_ms: int,
+    transcription_model: str,
     idle_timeout_ms: int | None,
-    input_audio_transcription_model: str | None = None,
 ) -> dict[str, object]:
     """Configure the Realtime session: audio in/out, server VAD, etc."""
 
@@ -63,6 +63,7 @@ def build_session_update(
             },
             "noise_reduction": {"type": "near_field"},
             "turn_detection": turn_detection,
+            "transcription": {"model": transcription_model},
         },
         "output": {
             "format": {
@@ -74,11 +75,6 @@ def build_session_update(
     }
 
     # Optional: built-in transcription model for comparison
-    if input_audio_transcription_model:
-        audio_config["input"]["transcription"] = {
-            "model": input_audio_transcription_model,
-        }
-
     session = {
         "type": "realtime",
         "output_modalities": ["audio"],
@@ -331,7 +327,7 @@ async def listen_for_events(
 async def run_realtime_session(
     voice: str = DEFAULT_VOICE,
     instructions: str = SYSTEM_PROMPT,
-    input_audio_transcription_model: str | None = "gpt-4o-transcribe",
+    transcription_model: str = "gpt-4o-mini-transcribe",
     silence_duration_ms: int = DEFAULT_SILENCE_DURATION_MS,
     prefix_padding_ms: int = DEFAULT_PREFIX_PADDING_MS,
     vad_threshold: float = 0.6,
@@ -359,7 +355,7 @@ async def run_realtime_session(
         silence_duration_ms=silence_duration_ms,
         prefix_padding_ms=prefix_padding_ms,
         idle_timeout_ms=idle_timeout_ms,
-        input_audio_transcription_model=input_audio_transcription_model,
+        transcription_model=transcription_model,
     )
     stop_event = asyncio.Event()
     playback_queue: asyncio.Queue = asyncio.Queue()
