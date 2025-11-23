@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class LiveEvent(StrEnum):
-    STATUS = "status"
-    THREAT = "threat"
+    STATE = "state"
     TRANSCRIPT = "transcript"
 
 

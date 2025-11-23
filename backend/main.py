@@ -79,10 +79,14 @@ async def main(simulation: bool = False):
     channel = supabase_async.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
 
+    print("📞 Incoming call...")
+    broadcast_event(channel, LiveEvent.STATE, {"status": "IDLE"})
+    await asyncio.sleep(1)
+
     if simulation:
+        broadcast_event(channel, LiveEvent.STATE, {"status": "ANALYZING"})
         await simulate_transcription(channel)
     else:
-        broadcast_event(channel, LiveEvent.STATUS, {"status": "IDLE"})
         await run_realtime_session(supabase=supabase_async, supabase_channel=channel)
 
 

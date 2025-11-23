@@ -149,8 +149,8 @@ async def _handle_response_done(
             await send_supabase_update(
                 shared_state.get("supabase_client"),
                 shared_state.get("supabase_channel"),
-                LiveEvent.THREAT,
-                {**args, "status": "THREAT_DETECTED"},
+                LiveEvent.STATE,
+                {"status": "THREAT_DETECTED", "data": {**args}},
             )
             print(f"🚨 Threat detected: {args}", flush=True)
             await force_model_continuation(ws, "Threat successfully reported.")
@@ -159,18 +159,22 @@ async def _handle_response_done(
             name = args.get("name", "unknown")
             print(f"Looking up identity for: {name}")
 
-            broadcast_event(channel, LiveEvent.STATUS, {"status": "CHALLENGING"})
+            broadcast_event(
+                channel,
+                LiveEvent.STATE,
+                {"status": "CHALLENGING", "data": {"name": name}},
+            )
             data = await fetch_challenge(shared_state.get("supabase_client"), name)
             await force_model_continuation(ws, json.dumps(data))
 
         case "hangup":
             print("FAILED. Hanging up.")
-            broadcast_event(channel, LiveEvent.STATUS, {"status": "FAILED"})
+            broadcast_event(channel, LiveEvent.STATE, {"status": "FAILED"})
             return True
 
         case "connect_call":
             print("VERIFIED! Connecting user...")
-            broadcast_event(channel, LiveEvent.STATUS, {"status": "VERIFIED"})
+            broadcast_event(channel, LiveEvent.STATE, {"status": "VERIFIED"})
     return False
 
 
@@ -197,9 +201,10 @@ async def listen_for_events(
         # --- User speech events ---
         if message_type == "input_audio_buffer.speech_started":
             print("\n[client] Speech detected; streaming...", flush=True)
+
             broadcast_event(
                 shared_state.get("supabase_channel"),
-                LiveEvent.STATUS,
+                LiveEvent.STATE,
                 {"status": "ANALYZING"},
             )
 
@@ -315,7 +320,7 @@ async def run_realtime_session(
         "supabase_channel": supabase_channel,
     }
 
-    broadcast_event(supabase_channel, LiveEvent.STATUS, {"status": "RINGING"})
+    broadcast_event(supabase_channel, LiveEvent.STATE, {"status": "RINGING"})
 
     async with websockets.connect(
         url, additional_headers=headers, proxy=None, max_size=None
