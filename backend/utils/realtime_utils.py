@@ -83,6 +83,10 @@ TOOLS = [
                     "type": "string",
                     "description": "The specific quote from the user that triggered this alert.",
                 },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the person calling.",
+                },
             },
             "required": ["confidence", "reason", "transcript"],
         },
