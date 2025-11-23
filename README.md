@@ -47,16 +47,21 @@ to answer questions about our recent interactions.
 
 When you setup an online account, you sometimes have to answer questions like
 "What is your mother's maiden name?" etc. This is for self-verification. My
-approach is for two-person verification, but relies on a bsimilar principle of
-both knowing certain truths ahead-of-time.
+approach is for two-person verification, but relies on a similar principle of
+knowing certain truths ahead-of-time.
 
 ## Technical breakdown
 
-There are two versions: one running 'properly', that you can actually call.
-+15187223932 or +447450307731. Go on then.
+There are two versions: one running 'properly', that you can actually call:
+
++15187223932
+or
++447450307731
+
+Go on then.
 
 The other runs locally, using your computer mic. You have to download the repo
-and install dependencies etc; maybe you want to do that?
+and install dependencies etc.; maybe you want to do that?
 
 ### Part 1 - Firewall
 
@@ -87,10 +92,15 @@ and install dependencies etc; maybe you want to do that?
 #### Stack / Tools
 
 Twilio: managing phones, handling phone-to-phone connection, patching calls as needed
+
 OpenAI Realtime API: the 'voicemail firewall', facilitates conversation
+
 FastAPI: backend server
+
 Supabase: realtime communication between backend server and mobile app
+
 Supabase: store shared secrets
+
 Expo / React Native: mobile app
 
 ## Running
@@ -98,12 +108,14 @@ Expo / React Native: mobile app
 Backend is deployed and listening.
 
 You can call +15187223932 or +447450307731 _right now_ and talk to the AI
-(provided I still have credits ofc).
+(provided I still have credits ofc). To my fellow South Africans: I couldn't
+get a Twilio number RICAed in time; forgive me.
 
 Alternatively, clone the code and run `main.py` for an interactive version that
-runs locally, using your mic (as opposed to your phone).
+runs locally, using your computer mic (as opposed to your phone).
 
-You can install the mobile app using Expo. It shows real-time progress as a call progresses.
+You can install the mobile app using Expo. It shows real-time progress as a
+call progresses.
 
 ## Future improvements
 
