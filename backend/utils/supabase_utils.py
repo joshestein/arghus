@@ -46,3 +46,28 @@ def broadcast_event(channel: AsyncRealtimeChannel, event: LiveEvent, payload: di
     """Sends `text` to supabase real-time channel."""
     print(f"📡 Broadcasting: {payload}")
     asyncio.create_task(channel.send_broadcast(event, payload))
+
+
+async def fetch_challenge(
+    supabase: AsyncRealtimeChannel, name: str
+) -> dict[str, str] | None:
+    """Fetches security question and answer for `name` from Supabase."""
+
+    # TODO: dynamic fetch
+
+    if name.lower() == "mom":
+        return {
+            "question": "What was our favourite beach you grew up going to?",
+            "answer": "Muizenberg",  # real playas know
+        }
+
+    elif name.lower() == "dad":
+        return {
+            "question": "What was our first dog's name?",
+            "answer": "Maximillian",  # lol never
+        }
+
+    return {
+        "question": "When does Gandalf arrive?",
+        "answer": "Exactly on time",
+    }
