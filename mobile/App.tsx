@@ -10,6 +10,7 @@ type ThreatData = {
   transcript: string;
   reason: string;
   confidence: number;
+  name?: string;
 };
 
 const MainPage = () => {
