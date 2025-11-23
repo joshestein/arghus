@@ -168,6 +168,25 @@ const MainPage = () => {
       );
     }
 
+    if (status === "FAILED") {
+      return (
+        <View style={styles.activeContent}>
+          <View style={styles.failedCard}>
+            <View style={styles.failedHeader}>
+              <Text style={{ fontSize: 30 }}>🛡️</Text>
+              <View style={{ marginLeft: 10 }}>
+                <Text style={styles.failedTitle}>VERIFICATION FAILED</Text>
+                {threatData?.name && <Text style={styles.failedName}>{threatData.name}</Text>}
+              </View>
+            </View>
+            <View style={[styles.divider, { backgroundColor: "#ef4444" }]} />
+            <Text style={styles.failedLabel}>STATUS:</Text>
+            <Text style={styles.failedText}>Call blocked - you were protected</Text>
+          </View>
+        </View>
+      );
+    }
+
     return null;
   };
 
@@ -201,6 +220,7 @@ const getStatusColor = (s: Status) => {
   if (s === "THREAT_DETECTED") return "#ef4444"; // Red
   if (s === "CHALLENGING") return "#ef4444"; // Red
   if (s === "VERIFIED") return "#4ade80"; // Green
+  if (s === "FAILED") return "#ef4444"; // Red
   return "#3b82f6"; // Blue
 };
 
@@ -469,6 +489,43 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   verifiedText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+
+  // Failed State
+  failedCard: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderWidth: 1,
+    borderColor: "#ef4444",
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+  },
+  failedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  failedTitle: {
+    color: "#ef4444",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  failedName: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  failedLabel: {
+    color: "#fca5a5",
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  failedText: {
     color: "white",
     fontSize: 15,
     fontWeight: "500",
