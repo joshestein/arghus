@@ -7,6 +7,8 @@ from supabase import acreate_client, create_client
 
 REALTIME_CHANNEL_NAME = "live"
 
+# TODO: extract `CallStatus` enum
+
 
 class LiveEvent(StrEnum):
     STATUS = "status"
