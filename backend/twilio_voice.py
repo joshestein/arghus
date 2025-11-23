@@ -19,7 +19,11 @@ from openai_cookbook import (
     DEFAULT_SILENCE_DURATION_MS,
     DEFAULT_PREFIX_PADDING_MS,
 )
-from supabase_utils import create_async_supabase_client, broadcast_event
+from supabase_utils import (
+    create_async_supabase_client,
+    broadcast_event,
+    REALTIME_CHANNEL_NAME,
+)
 
 load_dotenv()
 TWILIO_API_SID = os.getenv("TWILIO_API_SID")
@@ -103,7 +107,7 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
     }
 
     supabase = await create_async_supabase_client()
-    channel = supabase.channel("live_call")
+    channel = supabase.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
 
     broadcast_event(channel, "status", {"status": "IDLE"})

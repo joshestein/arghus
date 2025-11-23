@@ -4,6 +4,8 @@ import os
 from realtime import AsyncRealtimeChannel
 from supabase import acreate_client, create_client
 
+REALTIME_CHANNEL_NAME = "live"
+
 
 async def create_async_supabase_client():
     """Throws if SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY env vars are not set."""

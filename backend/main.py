@@ -10,6 +10,7 @@ from supabase_utils import (
     create_async_supabase_client,
     create_supabase_client,
     broadcast_event,
+    REALTIME_CHANNEL_NAME,
 )
 
 os.environ["no_proxy"] = "*"
@@ -26,7 +27,6 @@ I need you to wire bail money immediately. Please, I'm scared.
 Don't call dad, just send the money to this account number...
 """
 
-REALTIME_CHANNEL_NAME = "live_call"
 REALTIME_EVENT_TRANSCRIPT = "transcript"
 
 
