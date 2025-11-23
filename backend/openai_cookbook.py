@@ -100,6 +100,10 @@ def build_session_update(
                             "type": "string",
                             "description": "The specific quote from the user that triggered this alert.",
                         },
+                        "name": {
+                            "type": "string",
+                            "description": "The name of the person calling. If they haven't provided it, ask them.",
+                        },
                     },
                     "required": ["confidence", "reason", "transcript"],
                 },
