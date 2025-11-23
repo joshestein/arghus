@@ -153,6 +153,26 @@ async def _handle_response_done(
             )
             print(f"🚨 Threat detected: {args}", flush=True)
 
+            # Trigger the model to continue the conversation after reporting threat
+            await ws.send(
+                json.dumps(
+                    {
+                        "type": "conversation.item.create",
+                        "item": {
+                            "type": "message",
+                            "role": "system",
+                            "content": [
+                                {
+                                    "type": "input_text",
+                                    "text": "Threat successfully reported.",
+                                }
+                            ],
+                        },
+                    }
+                )
+            )
+            await ws.send(json.dumps({"type": "response.create"}))
+
         case "lookup_identity":
             name = args.get("name", "unknown")
             print(f"Looking up identity for: {name}")
