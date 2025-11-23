@@ -91,6 +91,7 @@ const MainPage = () => {
               <Text style={{ fontSize: 30 }}>⚠️</Text>
               <View style={{ marginLeft: 10 }}>
                 <Text style={styles.threatTitle}>RISK DETECTED</Text>
+                {threatData.name && <Text style={styles.threatName}>{threatData.name}</Text>}
                 <Text style={styles.threatSubtitle}>Confidence Score: {threatData.confidence}%</Text>
               </View>
             </View>
@@ -324,6 +325,12 @@ const styles = StyleSheet.create({
     color: "#ef4444",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  threatName: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 2,
   },
   threatSubtitle: {
     color: "white",
