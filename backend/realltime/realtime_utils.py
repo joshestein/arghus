@@ -20,7 +20,7 @@ def _build_session_config(
     silence_duration_ms: int,
     prefix_padding_ms: int,
     idle_timeout_ms: int | None,
-):
+) -> tuple[dict[str, object], dict[str, object]]:
     turn_detection = {
         "type": "server_vad",
         "threshold": vad_threshold,
