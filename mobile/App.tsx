@@ -4,7 +4,7 @@ import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from 
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "./lib/supabase";
 
-type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED" | "CHALLENGING";
+type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED" | "CHALLENGING" | "VERIFIED" | "FAILED";
 type ThreatData = {
   question: string;
   transcript: string;
@@ -149,6 +149,25 @@ const MainPage = () => {
       );
     }
 
+    if (status === "VERIFIED") {
+      return (
+        <View style={styles.activeContent}>
+          <View style={styles.verifiedCard}>
+            <View style={styles.verifiedHeader}>
+              <Text style={{ fontSize: 30 }}>🛡️</Text>
+              <View style={{ marginLeft: 10 }}>
+                <Text style={styles.verifiedTitle}>IDENTITY VERIFIED</Text>
+                {threatData?.name && <Text style={styles.verifiedName}>{threatData.name}</Text>}
+              </View>
+            </View>
+            <View style={styles.divider} />
+            <Text style={styles.verifiedLabel}>STATUS:</Text>
+            <Text style={styles.verifiedText}>Connecting call...</Text>
+          </View>
+        </View>
+      );
+    }
+
     return null;
   };
 
@@ -181,6 +200,7 @@ const getStatusColor = (s: Status) => {
   if (s === "ANALYZING") return "#facc15"; // Yellow
   if (s === "THREAT_DETECTED") return "#ef4444"; // Red
   if (s === "CHALLENGING") return "#ef4444"; // Red
+  if (s === "VERIFIED") return "#4ade80"; // Green
   return "#3b82f6"; // Blue
 };
 
@@ -415,5 +435,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 15,
     fontStyle: "italic",
+  },
+
+  // Verified State
+  verifiedCard: {
+    backgroundColor: "rgba(74, 222, 128, 0.1)",
+    borderWidth: 1,
+    borderColor: "#4ade80",
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+  },
+  verifiedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  verifiedTitle: {
+    color: "#4ade80",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  verifiedName: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  verifiedLabel: {
+    color: "#86efac",
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  verifiedText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "500",
   },
 });
