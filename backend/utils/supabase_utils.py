@@ -73,7 +73,7 @@ async def fetch_challenge(
 
     elif name == "david":
         return {
-            "question": "What colour is the best jelly bean?",
+            "question": "What colour do we agree is the best jelly bean?",
             "answer": "Purple",
         }
 
