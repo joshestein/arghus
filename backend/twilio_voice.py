@@ -206,10 +206,6 @@ async def _send_ai_response(
                     broadcast_event(channel, LiveEvent.TRANSCRIPT, {"text": transcript})
 
             elif openai_message_type == "response.output_audio.delta":
-                response_id = openai_response.get("response_id")
-                if not response_id:
-                    continue
-
                 b64_audio = openai_response.get("delta", "")
                 if not b64_audio:
                     continue

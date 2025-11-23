@@ -171,10 +171,6 @@ async def listen_for_events(
                 )
 
         elif message_type == "response.output_audio.delta":
-            response_id = message.get("response_id")
-            if not response_id:
-                continue
-
             b64_audio = message.get("delta", "")
             if not b64_audio:
                 continue
