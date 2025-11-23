@@ -327,10 +327,10 @@ async def send_supabase_update(
             payload=payload,
         )
 
-    if supabase is not None:
+    if supabase is not None and "status" in payload:
         await (
             supabase.table("active_calls")
-            .update({"status": "THREAT_DETECTED"})
+            .update({"status": payload["status"]})
             .eq("id", 1)
             .execute()
         )
