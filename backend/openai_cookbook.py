@@ -184,9 +184,13 @@ async def _handle_response_done(
                 "type": "conversation.item.create",
                 "item": {
                     "type": "message",
-                    "content": {
-                        "text": json.dumps(data),
-                    },
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": json.dumps(data),
+                        }
+                    ],
                 },
             }
             await ws.send(json.dumps(function_output_event))
