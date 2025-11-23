@@ -151,6 +151,14 @@ async def _handle_response_done(
             )
             print(f"🚨 Threat detected: {args}", flush=True)
 
+        case "hangup":
+            print("FAILED. Hanging up.")
+            broadcast_event(channel, LiveEvent.STATUS, {"status": "FAILED"})
+            return True
+        case "connect_call":
+            print("VERIFIED! Connecting user...")
+            broadcast_event(channel, LiveEvent.STATUS, {"status": "VERIFIED"})
+
 
 async def listen_for_events(
     ws: WebSocketClientProtocol,
