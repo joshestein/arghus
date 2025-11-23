@@ -211,7 +211,9 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                         elif openai_message_type == "response.output_text.delta":
                             response_id = openai_response.get("response_id")
                             if response_id:
-                                buffers[response_id] = buffers.get(response_id, "") + openai_response.get("delta", "")
+                                buffers[response_id] = buffers.get(
+                                    response_id, ""
+                                ) + openai_response.get("delta", "")
 
                         elif (
                             openai_message_type
@@ -219,7 +221,9 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                         ):
                             response_id = openai_response.get("response_id")
                             if response_id:
-                                buffers[response_id] = buffers.get(response_id, "") + openai_response.get("delta", "")
+                                buffers[response_id] = buffers.get(
+                                    response_id, ""
+                                ) + openai_response.get("delta", "")
 
                         elif openai_message_type == "response.done":
                             response = openai_response.get("response", {})
