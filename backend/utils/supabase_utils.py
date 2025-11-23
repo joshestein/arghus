@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from enum import StrEnum
 
@@ -8,6 +9,7 @@ from supabase import acreate_client, create_client
 REALTIME_CHANNEL_NAME = "live"
 
 # TODO: extract `CallStatus` enum
+logger = logging.getLogger(__name__)
 
 
 class LiveEvent(StrEnum):
@@ -44,7 +46,7 @@ def _get_supabase_credentials():
 
 def broadcast_event(channel: AsyncRealtimeChannel, event: LiveEvent, payload: dict):
     """Sends `text` to supabase real-time channel."""
-    print(f"📡 Broadcasting: {payload}")
+    logger.debug(f"Broadcasting event {event} with payload {payload}")
     asyncio.create_task(channel.send_broadcast(event, payload))
 
 
@@ -52,16 +54,18 @@ async def fetch_challenge(
     supabase: AsyncRealtimeChannel, name: str
 ) -> dict[str, str] | None:
     """Fetches security question and answer for `name` from Supabase."""
+    name = name.lower()
+    logger.debug(f"Fetching challenge for {name}")
 
     # TODO: dynamic fetch
 
-    if name.lower() == "mom":
+    if name == "mom":
         return {
             "question": "What was our favourite beach you grew up going to?",
             "answer": "Muizenberg",  # real playas know
         }
 
-    elif name.lower() == "dad":
+    elif name == "dad":
         return {
             "question": "What was our first dog's name?",
             "answer": "Maximillian",  # lol never
