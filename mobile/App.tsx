@@ -1,10 +1,10 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "./lib/supabase";
 
-type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED";
+type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED" | "CHALLENGING";
 type ThreatData = {
   question: string;
   transcript: string;
@@ -111,30 +111,43 @@ const MainPage = () => {
 
           {/* Recommendation / Action */}
           <View style={styles.actionArea}>
-            <Text style={styles.actionLabel}>RECOMMENDED QUESTION:</Text>
+            <Text style={styles.actionLabel}>INTERROGATION QUESTION</Text>
             <View style={styles.questionBox}>
               <Text style={styles.questionText}>{threatData.question}</Text>
             </View>
-            {/* <TouchableOpacity style={styles.injectButton} activeOpacity={0.8}>
-              <Text style={styles.injectButtonText}>INJECT QUESTION</Text>
-            </TouchableOpacity> */}
           </View>
         </View>
       );
     }
 
-    // 4. CHALLENGING (Success state)
-    // if (status === "CHALLENGING") {
-    //   return (
-    //     <View style={styles.centerContent}>
-    //       <View style={[styles.idleCircle, { borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.1)" }]}>
-    //         <Text style={{ fontSize: 60 }}>🔊</Text>
-    //       </View>
-    //       <Text style={[styles.heroTitle, { color: "#3b82f6" }]}>Injecting Audio</Text>
-    //       <Text style={styles.heroSubtitle}>Asking challenge question...</Text>
-    //     </View>
-    //   );
-    // }
+    if (status === "CHALLENGING" && threatData) {
+      return (
+        <View style={styles.activeContent}>
+          {/* Threat Card (Dimmed) */}
+          <View style={[styles.threatCard, { opacity: 0.6 }]}>
+            <View style={styles.threatHeader}>
+              <Text style={{ fontSize: 30 }}>⚠️</Text>
+              <View style={{ marginLeft: 10 }}>
+                <Text style={styles.threatTitle}>RISK DETECTED</Text>
+                {threatData.name && <Text style={styles.threatName}>{threatData.name}</Text>}
+                <Text style={styles.threatSubtitle}>Confidence Score: {threatData.confidence}%</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Active Challenge State */}
+          <View style={styles.challengingContainer}>
+            <View style={styles.challengingHeader}>
+              <ActivityIndicator size="small" color="#ef4444" style={{ marginRight: 10 }} />
+              <Text style={styles.challengingTitle}>CHALLENGING CALLER</Text>
+            </View>
+            <View style={styles.questionBox}>
+              <Text style={styles.questionText}>{threatData.question}</Text>
+            </View>
+          </View>
+        </View>
+      );
+    }
 
     return null;
   };
@@ -167,6 +180,7 @@ const getStatusColor = (s: Status) => {
   if (s === "RINGING") return "#facc15"; // Yellow
   if (s === "ANALYZING") return "#facc15"; // Yellow
   if (s === "THREAT_DETECTED") return "#ef4444"; // Red
+  if (s === "CHALLENGING") return "#ef4444"; // Red
   return "#3b82f6"; // Blue
 };
 
@@ -378,20 +392,28 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  injectButton: {
-    backgroundColor: "#ef4444",
-    paddingVertical: 16,
-    borderRadius: 30,
+
+  // Challenging State
+  challengingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#ef4444",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
   },
-  injectButtonText: {
-    color: "white",
-    fontWeight: "900",
-    fontSize: 16,
+  challengingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  challengingTitle: {
+    color: "#ef4444",
+    fontSize: 18,
+    fontWeight: "bold",
     letterSpacing: 1,
+  },
+  challengingSubtext: {
+    color: "#9ca3af",
+    fontSize: 12,
+    marginTop: 15,
+    fontStyle: "italic",
   },
 });
