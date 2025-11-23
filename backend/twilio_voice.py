@@ -258,8 +258,12 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                                 if name == "report_threat":
                                     broadcast_event(
                                         channel,
-                                        "threat_detected",
-                                        {**args, "status": "THREAT_DETECTED"},
+                                        "threat",
+                                        {
+                                            **args,
+                                            "status": "THREAT_DETECTED",
+                                            "question": "What was our first dog's name?",
+                                        },
                                     )
                                     print(f"🚨 Threat detected: {args}", flush=True)
 
