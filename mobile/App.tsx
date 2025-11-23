@@ -7,19 +7,24 @@ import { supabase } from "./lib/supabase";
 type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED" | "CHALLENGING" | "VERIFIED" | "FAILED";
 
 type ThreatPayload = {
-  question: string;
   transcript: string;
   reason: string;
   confidence: number;
   name?: string;
 };
 
+type ChallengePayload = {
+  name: string,
+  confidence: number,
+  question: string,
+}
+
 type CallState = 
   | { status: "IDLE"; data: null }
   | { status: "RINGING"; data: null }
   | { status: "ANALYZING"; data: null }
   | { status: "THREAT_DETECTED"; data: ThreatPayload } 
-  | { status: "CHALLENGING"; data: ThreatPayload } 
+  | { status: "CHALLENGING"; data: ChallengePayload } 
   | { status: "VERIFIED"; data: { name: string } }
   | { status: "FAILED"; data: { name: string } };
 
