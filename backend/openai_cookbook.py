@@ -11,7 +11,7 @@ from realtime import AsyncRealtimeChannel
 from supabase import AsyncClient
 from websockets.legacy.client import WebSocketClientProtocol
 
-from realltime.realtime_utils import (
+from utils.realtime import (
     DEFAULT_VOICE,
     SYSTEM_PROMPT,
     DEFAULT_SILENCE_DURATION_MS,

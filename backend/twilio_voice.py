@@ -19,7 +19,7 @@ from openai_cookbook import (
     DEFAULT_SILENCE_DURATION_MS,
     DEFAULT_PREFIX_PADDING_MS,
 )
-from realltime.realtime_utils import build_twilio_session
+from utils.realtime import build_twilio_session
 from supabase_utils import (
     create_async_supabase_client,
     broadcast_event,
