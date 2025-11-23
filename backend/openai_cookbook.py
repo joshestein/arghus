@@ -19,7 +19,7 @@ from utils.realtime_utils import (
     build_local_session,
     force_model_continuation,
 )
-from utils.supabase_utils import broadcast_event, LiveEvent, fetch_challenge
+from utils.supabase_utils import broadcast_event, LiveEvent, fetch_challenge, CallStatus
 
 load_dotenv()
 
@@ -150,7 +150,7 @@ async def _handle_response_done(
                 shared_state.get("supabase_client"),
                 shared_state.get("supabase_channel"),
                 LiveEvent.STATE,
-                {"status": "THREAT_DETECTED", "data": {**args}},
+                {"status": CallStatus.THREAT_DETECTED, "data": {**args}},
             )
             print(f"🚨 Threat detected: {args}", flush=True)
             await force_model_continuation(ws, "Threat successfully reported.")
@@ -169,12 +169,12 @@ async def _handle_response_done(
 
         case "hangup":
             print("FAILED. Hanging up.")
-            broadcast_event(channel, LiveEvent.STATE, {"status": "FAILED"})
+            broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.FAILED})
             return True
 
         case "connect_call":
             print("VERIFIED! Connecting user...")
-            broadcast_event(channel, LiveEvent.STATE, {"status": "VERIFIED"})
+            broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.VERIFIED})
     return False
 
 
@@ -205,7 +205,7 @@ async def listen_for_events(
             broadcast_event(
                 shared_state.get("supabase_channel"),
                 LiveEvent.STATE,
-                {"status": "ANALYZING"},
+                {"status": CallStatus.ANALYZING},
             )
 
         elif message_type == "input_audio_buffer.speech_stopped":
@@ -320,7 +320,7 @@ async def run_realtime_session(
         "supabase_channel": supabase_channel,
     }
 
-    broadcast_event(supabase_channel, LiveEvent.STATE, {"status": "RINGING"})
+    broadcast_event(supabase_channel, LiveEvent.STATE, {"status": CallStatus.RINGING})
 
     async with websockets.connect(
         url, additional_headers=headers, proxy=None, max_size=None

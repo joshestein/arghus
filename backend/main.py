@@ -12,6 +12,7 @@ from utils.supabase_utils import (
     broadcast_event,
     REALTIME_CHANNEL_NAME,
     LiveEvent,
+    CallStatus,
 )
 
 os.environ["no_proxy"] = "*"
@@ -80,11 +81,11 @@ async def main(simulation: bool = False):
     await channel.subscribe()
 
     print("📞 Incoming call...")
-    broadcast_event(channel, LiveEvent.STATE, {"status": "IDLE"})
+    broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.IDLE})
     await asyncio.sleep(1)
 
     if simulation:
-        broadcast_event(channel, LiveEvent.STATE, {"status": "ANALYZING"})
+        broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.ANALYZING})
         await simulate_transcription(channel)
     else:
         await run_realtime_session(supabase=supabase_async, supabase_channel=channel)

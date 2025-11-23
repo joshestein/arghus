@@ -17,6 +17,16 @@ class LiveEvent(StrEnum):
     TRANSCRIPT = "transcript"
 
 
+class CallStatus(StrEnum):
+    IDLE = "IDLE"
+    RINGING = "RINGING"
+    ANALYZING = "ANALYZING"
+    CHALLENGE = "CHALLENGE"
+    THREAT_DETECTED = "THREAT_DETECTED"
+    VERIFIED = "VERIFIED"
+    FAILED = "FAILED"
+
+
 async def create_async_supabase_client():
     """Throws if SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY env vars are not set."""
     supabase_url, supabase_key = _get_supabase_credentials()

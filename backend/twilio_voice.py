@@ -27,6 +27,7 @@ from utils.supabase_utils import (
     broadcast_event,
     REALTIME_CHANNEL_NAME,
     LiveEvent,
+    CallStatus,
 )
 
 load_dotenv()
@@ -118,18 +119,18 @@ async def _receive_twilio_stream(
                         shared_state.get("stream_sid"),
                         shared_state.get("call_sid"),
                     )
-                    broadcast_event(channel, LiveEvent.STATE, {"status": "ANALYZING"})
+                    broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.ANALYZING})
                 case "media":
                     # Forward to OpenAI
                     base64_audio = data["media"]["payload"]
                     await send_to_openai(openai_ws, base64_audio)
                 case "stop":
                     print("Twilio stream has stopped")
-                    broadcast_event(
-                        channel,
-                        LiveEvent.STATE,
-                        {"status": "COMPLETED"},
-                    )
+                    # broadcast_event(
+                    #     channel,
+                    #     LiveEvent.STATE,
+                    #     {"status": "COMPLETED"},
+                    # )
     except WebSocketDisconnect:
         print("Twilio webSocket disconnected")
     finally:
@@ -167,7 +168,7 @@ async def _handle_response_done(
                 channel,
                 LiveEvent.STATE,
                 {
-                    "status": "THREAT_DETECTED",
+                    "status": CallStatus.THREAT_DETECTED,
                     "data": {
                         "question": "What was our first dog's name?",
                         **args,
@@ -177,11 +178,11 @@ async def _handle_response_done(
             print(f"🚨 Threat detected: {args}", flush=True)
         case "hangup":
             print("FAILED. Hanging up.")
-            broadcast_event(channel, LiveEvent.STATE, {"status": "FAILED"})
+            broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.FAILED})
             return True
         case "connect_call":
             print("VERIFIED! Connecting user...")
-            broadcast_event(channel, LiveEvent.STATE, {"status": "VERIFIED"})
+            broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.VERIFIED})
             call_sid = shared_state.get("call_sid")
             if call_sid:
                 twiml_patch = f"""<Response>
@@ -295,12 +296,12 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
     channel = supabase.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
 
-    broadcast_event(channel, LiveEvent.STATE, {"status": "IDLE"})
+    broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.IDLE})
 
     print("Connecting to OpenAI Realtime API...")
     await asyncio.sleep(2)
 
-    broadcast_event(channel, LiveEvent.STATE, {"status": "RINGING"})
+    broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.RINGING})
 
     try:
         async with websockets.connect(
