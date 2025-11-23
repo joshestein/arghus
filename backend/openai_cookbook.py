@@ -116,6 +116,42 @@ async def stream_microphone_audio(
     await sender
 
 
+async def _handle_response_done(
+    message: dict, buffers: defaultdict[str, str], shared_state: dict
+) -> None:
+    """Handle the 'response.done' event from OpenAI Realtime API."""
+    response = message.get("response", {})
+    response_id = response.get("id")
+    if not response_id:
+        return
+
+    text = buffers.get(response_id, "").strip()
+
+    if text:
+        print("\n=== Assistant response ===\n")
+        print(text)
+
+    output = response.get("output")
+    if not output or len(output) == 0:
+        return
+
+    if output[0].get("type") != "function_call":
+        return
+
+    name = output[0].get("name")
+    args = json.loads(output[0].get("arguments", "{}"))
+
+    match name:
+        case "report_threat":
+            await send_supabase_update(
+                shared_state.get("supabase_client"),
+                shared_state.get("supabase_channel"),
+                LiveEvent.THREAT,
+                {**args, "status": "THREAT_DETECTED"},
+            )
+            print(f"🚨 Threat detected: {args}", flush=True)
+
+
 async def listen_for_events(
     ws: WebSocketClientProtocol,
     stop_event: asyncio.Event,
@@ -189,29 +225,7 @@ async def listen_for_events(
                 buffers[response_id] += message.get("delta", "")
 
         elif message_type == "response.done":
-            response = message.get("response", {})
-            response_id = response.get("id")
-            if not response_id:
-                continue
-
-            text = buffers.get(response_id, "").strip()
-
-            if text:
-                print("\n=== Assistant response ===\n")
-                print(text)
-
-            output = response.get("output")
-            if output and len(output) > 0 and output[0].get("type") == "function_call":
-                name = output[0].get("name")
-                args = json.loads(output[0].get("arguments", "{}"))
-                if name == "report_threat":
-                    await send_supabase_update(
-                        shared_state.get("supabase_client"),
-                        shared_state.get("supabase_channel"),
-                        LiveEvent.THREAT,
-                        {**args, "status": "THREAT_DETECTED"},
-                    )
-                    print(f"🚨 Threat detected: {args}", flush=True)
+            await _handle_response_done(message, buffers, shared_state)
 
             shared_state["mute_mic"] = False
             completed_main_responses += 1
