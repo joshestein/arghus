@@ -1,3 +1,5 @@
+import json
+
 SYSTEM_PROMPT = """
 # Role & Objective        — who you are and what “success” means
 
@@ -236,3 +238,24 @@ def build_local_session(
         "type": "session.update",
         "session": session,
     }
+
+
+async def force_model_continuation(websocket, text: str):
+    await websocket.send(
+        json.dumps(
+            {
+                "type": "conversation.item.create",
+                "item": {
+                    "type": "message",
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": f"{text}",
+                        }
+                    ],
+                },
+            }
+        )
+    )
+    await websocket.send(json.dumps({"type": "response.create"}))

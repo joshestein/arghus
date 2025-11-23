@@ -17,6 +17,7 @@ from utils.realtime_utils import (
     DEFAULT_SILENCE_DURATION_MS,
     DEFAULT_PREFIX_PADDING_MS,
     build_local_session,
+    force_model_continuation,
 )
 from utils.supabase_utils import broadcast_event, LiveEvent, fetch_challenge
 
@@ -152,50 +153,15 @@ async def _handle_response_done(
                 {**args, "status": "THREAT_DETECTED"},
             )
             print(f"🚨 Threat detected: {args}", flush=True)
-
-            # Trigger the model to continue the conversation after reporting threat
-            await ws.send(
-                json.dumps(
-                    {
-                        "type": "conversation.item.create",
-                        "item": {
-                            "type": "message",
-                            "role": "system",
-                            "content": [
-                                {
-                                    "type": "input_text",
-                                    "text": "Threat successfully reported.",
-                                }
-                            ],
-                        },
-                    }
-                )
-            )
-            await ws.send(json.dumps({"type": "response.create"}))
+            await force_model_continuation(ws, "Threat successfully reported.")
 
         case "lookup_identity":
             name = args.get("name", "unknown")
             print(f"Looking up identity for: {name}")
 
-            data = await fetch_challenge(shared_state.get("supabase_client"), name)
             broadcast_event(channel, LiveEvent.STATUS, {"status": "CHALLENGING"})
-
-            function_output_event = {
-                "type": "conversation.item.create",
-                "item": {
-                    "type": "message",
-                    "role": "system",
-                    "content": [
-                        {
-                            "type": "input_text",
-                            "text": json.dumps(data),
-                        }
-                    ],
-                },
-            }
-            await ws.send(json.dumps(function_output_event))
-            # Trigger response
-            await ws.send(json.dumps({"type": "response.create"}))
+            data = await fetch_challenge(shared_state.get("supabase_client"), name)
+            await force_model_continuation(ws, json.dumps(data))
 
         case "hangup":
             print("FAILED. Hanging up.")
