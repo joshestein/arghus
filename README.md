@@ -115,3 +115,10 @@ are a ton of integrations you can build. The more you know, the more you can
 trust your secrets.
 
 See todos.md
+
+## What's in a name?
+
+Argus - 1000-eyed giant, always vigilant and watching
+Argh - the feeling you have when you get spam
+
+Now put them together
