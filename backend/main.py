@@ -82,6 +82,7 @@ async def main(simulation: bool = False):
     if simulation:
         await simulate_transcription(channel)
     else:
+        broadcast_event(channel, LiveEvent.STATUS, {"status": "IDLE"})
         await run_realtime_session(supabase=supabase_async, supabase_channel=channel)
 
 

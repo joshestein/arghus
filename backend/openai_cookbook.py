@@ -303,6 +303,8 @@ async def run_realtime_session(
         "supabase_channel": supabase_channel,
     }
 
+    broadcast_event(supabase_channel, LiveEvent.STATUS, {"status": "RINGING"})
+
     async with websockets.connect(
         url, additional_headers=headers, proxy=None, max_size=None
     ) as ws:
