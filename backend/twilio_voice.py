@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import HTMLResponse
 from fastapi.websockets import WebSocketDisconnect
+from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 from websockets import ClientConnection
@@ -33,6 +34,7 @@ TWILIO_API_SID = os.getenv("TWILIO_API_SID")
 TWILIO_SECRET_KEY = os.getenv("TWILIO_SECRET_KEY")
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_NUMBER_SID = os.getenv("TWILIO_NUMBER_SID")
+USER_REAL_PHONE = os.getenv("USER_REAL_PHONE")
 client = Client(TWILIO_API_SID, TWILIO_SECRET_KEY, TWILIO_ACCOUNT_SID)
 
 NGROK_AUTH_TOKEN = os.getenv("NGROK_AUTH_TOKEN")
@@ -110,7 +112,12 @@ async def _receive_twilio_stream(
                     print("Connected to Twilio media stream")
                 case "start":
                     shared_state["stream_sid"] = data["start"]["streamSid"]
-                    print("Twilio stream started:", shared_state.get("stream_sid"))
+                    shared_state["call_sid"] = data["start"]["callSid"]
+                    print(
+                        "Twilio stream started:",
+                        shared_state.get("stream_sid"),
+                        shared_state.get("call_sid"),
+                    )
                     broadcast_event(channel, LiveEvent.STATUS, {"status": "ANALYZING"})
                 case "media":
                     # Forward to OpenAI
@@ -129,11 +136,17 @@ async def _receive_twilio_stream(
         await openai_ws.close()
 
 
-async def _handle_response_done(openai_response: dict, buffers: dict, channel):
+async def _handle_response_done(
+    openai_response: dict, buffers: dict, channel, shared_state: dict
+):
+    """Handle the 'response.done' event from OpenAI Realtime API.
+
+    :return True if the call is being connected, False otherwise.
+    """
     response = openai_response.get("response", {})
     response_id = response.get("id")
     if not response_id:
-        return
+        return False
 
     text = buffers.get(response_id, "").strip()
 
@@ -143,7 +156,7 @@ async def _handle_response_done(openai_response: dict, buffers: dict, channel):
 
     output = response.get("output")
     if not output or len(output) == 0:
-        return
+        return False
 
     name = output[0].get("name")
     args = json.loads(output[0].get("arguments", "{}"))
@@ -160,6 +173,28 @@ async def _handle_response_done(openai_response: dict, buffers: dict, channel):
                 },
             )
             print(f"🚨 Threat detected: {args}", flush=True)
+        case "hangup":
+            print("FAILED. Hanging up.")
+            broadcast_event(channel, LiveEvent.STATUS, {"status": "FAILED"})
+            # TODO: implement hangup via Twilio API
+        case "connect_call":
+            print("VERIFIED! Connecting user...")
+            broadcast_event(channel, LiveEvent.STATUS, {"status": "VERIFIED"})
+            call_sid = shared_state.get("call_sid")
+            if call_sid:
+                twiml_patch = f"""<Response>
+                   <Say>Identity verified. Connecting you now.</Say>
+                   <Dial>{USER_REAL_PHONE}</Dial>
+               </Response>"""
+
+                try:
+                    client.calls(call_sid).update(twiml=twiml_patch)
+                    return True
+                except TwilioRestException as err:
+                    print(f"Error updating call TwiML: {err}", flush=True)
+                    return False
+
+    return False
 
 
 async def _send_ai_response(
@@ -225,10 +260,15 @@ async def _send_ai_response(
                     ) + openai_response.get("delta", "")
 
             elif openai_message_type == "response.done":
-                await _handle_response_done(openai_response, buffers, channel)
+                patching_call = await _handle_response_done(
+                    openai_response, buffers, channel, shared_state
+                )
+                if patching_call:
+                    await twilio_ws.close()
+                    return
             elif openai_message_type == "error":
                 print(
-                    f"[client] OpenAI error (full response):",
+                    "[client] OpenAI error (full response):",
                     flush=True,
                 )
                 print(json.dumps(openai_response, indent=2))
@@ -241,7 +281,7 @@ async def _send_ai_response(
 async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
     await twilio_ws.accept()
 
-    shared_state = {"stream_sid": None}
+    shared_state = {"stream_sid": None, "call_sid": None}
     url = "wss://api.openai.com/v1/realtime?model=gpt-realtime"
 
     headers = {
