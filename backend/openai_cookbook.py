@@ -332,6 +332,19 @@ async def run_realtime_session(
     ) as ws:
         await ws.send(json.dumps(session_update_payload))
 
+        # Trigger the model to start the conversation
+        await ws.send(
+            json.dumps(
+                {
+                    "type": "response.create",
+                    "response": {
+                        "output_modalities": ["audio"],
+                        "instructions": "Hello, this is Josh's secure voicemail. Who am I speaking with?",
+                    },
+                }
+            )
+        )
+
         listener_task = asyncio.create_task(
             listen_for_events(
                 ws,
