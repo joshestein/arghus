@@ -59,7 +59,7 @@ async def simulate_transcription(channel: AsyncRealtimeChannel):
             break
 
 
-async def main():
+async def main(simulation: bool = False):
     supabase = create_supabase_client()
     reset_simulation(supabase)
 
@@ -78,9 +78,11 @@ async def main():
     supabase_async: AsyncClient = await create_async_supabase_client()
     channel = supabase_async.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
-    # Uncomment to simulate transcription streaming
-    # await simulate_transcription(channel)
-    await run_realtime_session(supabase=supabase_async, supabase_channel=channel)
+
+    if simulation:
+        await simulate_transcription(channel)
+    else:
+        await run_realtime_session(supabase=supabase_async, supabase_channel=channel)
 
 
 if __name__ == "__main__":
