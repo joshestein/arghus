@@ -28,6 +28,9 @@ the true caller.
 
 A picture says a thousand words, here's a demo:
 
+![demo](demo.mp4)
+
+or https://www.loom.com/share/37636caab0874426b28875ad3af6dc1d
 
 ## Shared secrets
 
