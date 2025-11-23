@@ -11,6 +11,7 @@ from supabase_utils import (
     create_supabase_client,
     broadcast_event,
     REALTIME_CHANNEL_NAME,
+    LiveEvent,
 )
 
 os.environ["no_proxy"] = "*"
@@ -47,9 +48,7 @@ async def simulate_transcription(channel: AsyncRealtimeChannel):
     for i, word in enumerate(LIVE_TRANSCRIPT.split()):
         if i % 5 == 0:  # Update DB every 5 words to avoid rate limit
             current_transcript += " " + word
-            broadcast_event(
-                channel, REALTIME_EVENT_TRANSCRIPT, {"text": current_transcript}
-            )
+            broadcast_event(channel, LiveEvent.TRANSCRIPT, {"text": current_transcript})
         else:
             current_transcript += " " + word
 

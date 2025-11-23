@@ -1,10 +1,17 @@
 import asyncio
 import os
+from enum import StrEnum
 
 from realtime import AsyncRealtimeChannel
 from supabase import acreate_client, create_client
 
 REALTIME_CHANNEL_NAME = "live"
+
+
+class LiveEvent(StrEnum):
+    STATUS = "status"
+    THREAT = "threat"
+    TRANSCRIPT = "transcript"
 
 
 async def create_async_supabase_client():
@@ -33,7 +40,7 @@ def _get_supabase_credentials():
     return supabase_url, supabase_key
 
 
-def broadcast_event(channel: AsyncRealtimeChannel, event: str, payload: dict):
+def broadcast_event(channel: AsyncRealtimeChannel, event: LiveEvent, payload: dict):
     """Sends `text` to supabase real-time channel."""
     print(f"📡 Broadcasting: {payload}")
     asyncio.create_task(channel.send_broadcast(event, payload))

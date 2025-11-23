@@ -23,6 +23,7 @@ from supabase_utils import (
     create_async_supabase_client,
     broadcast_event,
     REALTIME_CHANNEL_NAME,
+    LiveEvent,
 )
 
 load_dotenv()
@@ -110,12 +111,12 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
     channel = supabase.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
 
-    broadcast_event(channel, "status", {"status": "IDLE"})
+    broadcast_event(channel, LiveEvent.STATUS, {"status": "IDLE"})
 
     print("Connecting to OpenAI Realtime API...")
     await asyncio.sleep(2)
 
-    broadcast_event(channel, "status", {"status": "RINGING"})
+    broadcast_event(channel, LiveEvent.STATUS, {"status": "RINGING"})
 
     try:
         async with websockets.connect(
@@ -146,7 +147,7 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                                 stream_sid = data["start"]["streamSid"]
                                 print("Twilio stream started:", stream_sid)
                                 broadcast_event(
-                                    channel, "status", {"status": "ANALYZING"}
+                                    channel, LiveEvent.STATUS, {"status": "ANALYZING"}
                                 )
                             case "media":
                                 base64_audio = data["media"]["payload"]
@@ -203,7 +204,7 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                                 print("\n=== User turn (Transcription) ===\n")
                                 print(transcript)
                                 broadcast_event(
-                                    channel, "transcript", {"text": transcript}
+                                    channel, LiveEvent.TRANSCRIPT, {"text": transcript}
                                 )
 
                         elif openai_message_type == "response.output_audio.delta":
@@ -262,7 +263,7 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                                 if name == "report_threat":
                                     broadcast_event(
                                         channel,
-                                        "threat",
+                                        LiveEvent.THREAT,
                                         {
                                             **args,
                                             "status": "THREAT_DETECTED",

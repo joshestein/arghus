@@ -11,7 +11,7 @@ from realtime import AsyncRealtimeChannel
 from supabase import AsyncClient
 from websockets.legacy.client import WebSocketClientProtocol
 
-from supabase_utils import broadcast_event
+from supabase_utils import broadcast_event, LiveEvent
 
 load_dotenv()
 
@@ -29,8 +29,6 @@ DEFAULT_SAMPLE_RATE = 24_000
 DEFAULT_BLOCK_MS = 100
 DEFAULT_SILENCE_DURATION_MS = 800
 DEFAULT_PREFIX_PADDING_MS = 300
-
-REALTIME_EVENT_THREAT = "threat"
 
 
 def build_session_update(
@@ -258,7 +256,7 @@ async def listen_for_events(
                 await send_supabase_update(
                     None,
                     shared_state.get("supabase_channel"),
-                    "transcript",
+                    LiveEvent.TRANSCRIPT,
                     {"text": transcript},
                 )
 
@@ -309,7 +307,7 @@ async def listen_for_events(
                     await send_supabase_update(
                         shared_state.get("supabase_client"),
                         shared_state.get("supabase_channel"),
-                        REALTIME_EVENT_THREAT,
+                        LiveEvent.THREAT,
                         {**args, "status": "THREAT_DETECTED"},
                     )
                     print(f"🚨 Threat detected: {args}", flush=True)
@@ -409,7 +407,7 @@ async def run_realtime_session(
 async def send_supabase_update(
     supabase: AsyncClient | None,
     channel: AsyncRealtimeChannel | None,
-    event,
+    event: LiveEvent,
     payload: dict,
 ) -> None:
     print(payload)
