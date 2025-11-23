@@ -19,7 +19,7 @@ const MainPage = () => {
   const [transcript, setTranscript] = useState("");
 
   useEffect(() => {
-    const liveCallChannel = supabase.channel("live_call");
+    const liveCallChannel = supabase.channel("live");
 
     liveCallChannel
       .on("broadcast", { event: "status" }, (data) => {
