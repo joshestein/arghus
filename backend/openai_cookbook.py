@@ -11,14 +11,14 @@ from realtime import AsyncRealtimeChannel
 from supabase import AsyncClient
 from websockets.legacy.client import WebSocketClientProtocol
 
-from utils.realtime import (
+from utils.realtime_utils import (
     DEFAULT_VOICE,
     SYSTEM_PROMPT,
     DEFAULT_SILENCE_DURATION_MS,
     DEFAULT_PREFIX_PADDING_MS,
     build_local_session,
 )
-from utils.supabase import broadcast_event, LiveEvent
+from utils.supabase_utils import broadcast_event, LiveEvent
 
 load_dotenv()
 
