@@ -8,7 +8,7 @@ import websockets
 import sounddevice as sd
 from dotenv import load_dotenv
 from realtime import AsyncRealtimeChannel
-from supabase import AsyncClient, Client
+from supabase import AsyncClient
 from websockets.legacy.client import WebSocketClientProtocol
 
 from supabase_utils import broadcast_event
@@ -20,7 +20,8 @@ You are a security bodyguard listening to a phone call.
 1. Listen for high-pressure scam tactics (bail money, gift cards, kidnapped).
 2. Listen for emotional distress (crying, shouting).
 3. If you detect a scam, immediately call the 'report_threat' function.
-4. Do NOT speak to the user unless they ask you something directly.
+4. Start the call by greeting the user politely.
+5. Ask the user for their name if they do not introduce themselves.
 """
 
 DEFAULT_VOICE = "marin"
@@ -74,7 +75,6 @@ def build_session_update(
         },
     }
 
-    # Optional: built-in transcription model for comparison
     session = {
         "type": "realtime",
         "output_modalities": ["audio"],
@@ -417,9 +417,12 @@ async def send_supabase_update(
         )
 
     if supabase is not None:
-        await supabase.table("active_calls").update({"status": "THREAT_DETECTED"}).eq(
-            "id", 1
-        ).execute()
+        await (
+            supabase.table("active_calls")
+            .update({"status": "THREAT_DETECTED"})
+            .eq("id", 1)
+            .execute()
+        )
 
 
 if __name__ == "__main__":
