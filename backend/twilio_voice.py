@@ -21,13 +21,14 @@ from openai_cookbook import (
     DEFAULT_SILENCE_DURATION_MS,
     DEFAULT_PREFIX_PADDING_MS,
 )
-from utils.realtime_utils import build_twilio_session
+from utils.realtime_utils import build_twilio_session, force_model_continuation
 from utils.supabase_utils import (
     create_async_supabase_client,
     broadcast_event,
     REALTIME_CHANNEL_NAME,
     LiveEvent,
     CallStatus,
+    fetch_challenge,
 )
 
 load_dotenv()
@@ -119,7 +120,9 @@ async def _receive_twilio_stream(
                         shared_state.get("stream_sid"),
                         shared_state.get("call_sid"),
                     )
-                    broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.ANALYZING})
+                    broadcast_event(
+                        channel, LiveEvent.STATE, {"status": CallStatus.ANALYZING}
+                    )
                 case "media":
                     # Forward to OpenAI
                     base64_audio = data["media"]["payload"]
@@ -138,7 +141,7 @@ async def _receive_twilio_stream(
 
 
 async def _handle_response_done(
-    openai_response: dict, buffers: dict, channel, shared_state: dict
+    ws, openai_response: dict, buffers: dict, channel, shared_state: dict
 ):
     """Handle the 'response.done' event from OpenAI Realtime API.
 
@@ -167,19 +170,28 @@ async def _handle_response_done(
             broadcast_event(
                 channel,
                 LiveEvent.STATE,
-                {
-                    "status": CallStatus.THREAT_DETECTED,
-                    "data": {
-                        "question": "What was our first dog's name?",
-                        **args,
-                    },
-                },
+                {"status": CallStatus.THREAT_DETECTED, "data": {**args}},
             )
             print(f"🚨 Threat detected: {args}", flush=True)
+            await force_model_continuation(ws, "Threat successfully reported.")
+
+        case "lookup_identity":
+            name = args.get("name", "unknown")
+            print(f"Looking up identity for: {name}")
+
+            broadcast_event(
+                channel,
+                LiveEvent.STATE,
+                {"status": "CHALLENGING", "data": {"name": name}},
+            )
+            data = await fetch_challenge(shared_state.get("supabase_client"), name)
+            await force_model_continuation(ws, json.dumps(data))
+
         case "hangup":
             print("FAILED. Hanging up.")
             broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.FAILED})
             return True
+
         case "connect_call":
             print("VERIFIED! Connecting user...")
             broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.VERIFIED})
@@ -264,7 +276,7 @@ async def _send_ai_response(
 
             elif openai_message_type == "response.done":
                 patching_call = await _handle_response_done(
-                    openai_response, buffers, channel, shared_state
+                    openai_ws, openai_response, buffers, channel, shared_state
                 )
                 if patching_call:
                     await twilio_ws.close()
