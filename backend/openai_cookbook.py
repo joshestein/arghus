@@ -187,11 +187,6 @@ async def listen_for_events(
             shared_state["mute_mic"] = True
             await playback_queue.put(audio_chunk)
 
-        elif message_type == "response.output_text.delta":
-            response_id = message.get("response_id")
-            if response_id:
-                buffers[response_id] += message.get("delta", "")
-
         elif message_type == "response.output_audio_transcript.delta":
             response_id = message.get("response_id")
             if response_id:

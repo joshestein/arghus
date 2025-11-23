@@ -221,13 +221,6 @@ async def _send_ai_response(
                 }
                 await twilio_ws.send_json(audio_data)
 
-            elif openai_message_type == "response.output_text.delta":
-                response_id = openai_response.get("response_id")
-                if response_id:
-                    buffers[response_id] = buffers.get(
-                        response_id, ""
-                    ) + openai_response.get("delta", "")
-
             elif openai_message_type == "response.output_audio_transcript.delta":
                 response_id = openai_response.get("response_id")
                 if response_id:
