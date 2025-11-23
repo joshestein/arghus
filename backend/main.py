@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from dotenv import load_dotenv
 from realtime import AsyncRealtimeChannel
@@ -10,6 +11,9 @@ from supabase_utils import (
     create_supabase_client,
     broadcast_event,
 )
+
+os.environ["no_proxy"] = "*"
+os.environ["NO_PROXY"] = "*"
 
 load_dotenv()
 
