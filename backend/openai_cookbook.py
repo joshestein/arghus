@@ -329,7 +329,6 @@ async def listen_for_events(
 
 
 async def run_realtime_session(
-    api_key: str | None = None,
     voice: str = DEFAULT_VOICE,
     instructions: str = SYSTEM_PROMPT,
     input_audio_transcription_model: str | None = "gpt-4o-transcribe",
@@ -343,7 +342,7 @@ async def run_realtime_session(
     supabase_channel: AsyncRealtimeChannel | None = None,
 ) -> None:
     """Connect to the Realtime API, stream audio both ways, and print transcripts."""
-    api_key = api_key or os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("OPENAI_API_KEY")
     if api_key is None:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
 
