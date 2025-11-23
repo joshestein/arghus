@@ -118,12 +118,12 @@ async def stream_microphone_audio(
 
 async def _handle_response_done(
     message: dict, buffers: defaultdict[str, str], shared_state: dict
-) -> None:
+):
     """Handle the 'response.done' event from OpenAI Realtime API."""
     response = message.get("response", {})
     response_id = response.get("id")
     if not response_id:
-        return
+        return False
 
     text = buffers.get(response_id, "").strip()
 
@@ -133,10 +133,10 @@ async def _handle_response_done(
 
     output = response.get("output")
     if not output or len(output) == 0:
-        return
+        return False
 
     if output[0].get("type") != "function_call":
-        return
+        return False
 
     name = output[0].get("name")
     args = json.loads(output[0].get("arguments", "{}"))
@@ -233,7 +233,13 @@ async def listen_for_events(
                 buffers[response_id] += message.get("delta", "")
 
         elif message_type == "response.done":
-            await _handle_response_done(message, buffers, shared_state)
+            should_end_call = await _handle_response_done(
+                message, buffers, shared_state
+            )
+
+            if should_end_call:
+                stop_event.set()
+                break
 
             shared_state["mute_mic"] = False
             completed_main_responses += 1
