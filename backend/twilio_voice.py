@@ -172,29 +172,56 @@ async def _handle_response_done(
                 LiveEvent.STATE,
                 {"status": CallStatus.THREAT_DETECTED, "data": {**args}},
             )
+            shared_state["name"] = args.get("name")
+            shared_state["confidence"] = args.get("confidence")
+
             print(f"🚨 Threat detected: {args}", flush=True)
             await force_model_continuation(ws, "Threat successfully reported.")
 
         case "lookup_identity":
             name = args.get("name", "unknown")
+            shared_state["name"] = name
             print(f"Looking up identity for: {name}")
+
+            data = await fetch_challenge(shared_state.get("supabase_client"), name)
+            shared_state["question"] = data.get("question")
 
             broadcast_event(
                 channel,
                 LiveEvent.STATE,
-                {"status": CallStatus.CHALLENGING, "data": {"name": name}},
+                {
+                    "status": CallStatus.CHALLENGING,
+                    "data": {
+                        "name": name,
+                        "confidence": shared_state.get("confidence"),
+                        "question": data.get("question"),
+                    },
+                },
             )
-            data = await fetch_challenge(shared_state.get("supabase_client"), name)
             await force_model_continuation(ws, json.dumps(data))
 
         case "hangup":
             print("FAILED. Hanging up.")
-            broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.FAILED})
+            broadcast_event(
+                channel,
+                LiveEvent.STATE,
+                {
+                    "status": CallStatus.FAILED,
+                    "data": {"name": shared_state.get("name")},
+                },
+            )
             return True
 
         case "connect_call":
             print("VERIFIED! Connecting user...")
-            broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.VERIFIED})
+            broadcast_event(
+                channel,
+                LiveEvent.STATE,
+                {
+                    "status": CallStatus.VERIFIED,
+                    "data": {"name": shared_state.get("name")},
+                },
+            )
             call_sid = shared_state.get("call_sid")
             if call_sid:
                 twiml_patch = f"""<Response>
