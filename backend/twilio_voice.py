@@ -182,7 +182,7 @@ async def _handle_response_done(
             broadcast_event(
                 channel,
                 LiveEvent.STATE,
-                {"status": "CHALLENGING", "data": {"name": name}},
+                {"status": CallStatus.CHALLENGING, "data": {"name": name}},
             )
             data = await fetch_challenge(shared_state.get("supabase_client"), name)
             await force_model_continuation(ws, json.dumps(data))
