@@ -410,7 +410,6 @@ async def send_supabase_update(
     event: LiveEvent,
     payload: dict,
 ) -> None:
-    print(payload)
     if channel is not None:
         broadcast_event(
             channel,
