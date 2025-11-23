@@ -19,6 +19,17 @@ const MainPage = () => {
 
   useEffect(() => {
     const liveCallChannel = supabase.channel("live_call");
+
+    liveCallChannel
+      .on("broadcast", { event: "status" }, (data) => {
+        setStatus(data.payload.status);
+        if (data.payload.status === 'IDLE') {
+          setTranscript("");
+          setThreatData(null);
+        }
+      })
+      .subscribe();
+
     liveCallChannel
       .on("broadcast", { event: "transcript" }, (data) => {
         setTranscript(data.payload.text);
@@ -32,26 +43,8 @@ const MainPage = () => {
       })
       .subscribe();
 
-    const statusChannel = supabase
-      .channel("public:active_calls")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "active_calls",
-        },
-        (payload) => {
-          const newData = payload.new;
-          setStatus(newData.status);
-          if (newData.transcript) setTranscript(newData.transcript);
-        },
-      )
-      .subscribe();
-
     return () => {
       supabase.removeChannel(liveCallChannel);
-      supabase.removeChannel(statusChannel);
     };
   }, []);
 
