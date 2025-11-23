@@ -210,6 +210,12 @@ async def _handle_response_done(
                     "data": {"name": shared_state.get("name")},
                 },
             )
+            call_sid = shared_state.get("call_sid")
+            if call_sid:
+                twiml_patch = f"""<Response>
+                   <Say>Verification failed. Goodbye.</Say>
+               </Response>"""
+                client.calls(call_sid).update(twiml=twiml_patch)
             return True
 
         case "connect_call":

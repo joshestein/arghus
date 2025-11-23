@@ -190,6 +190,7 @@ async def _handle_response_done(
                     "data": {"name": shared_state.get("name")},
                 },
             )
+            await force_model_continuation(ws, "Verification failed. Goodbye.")
             return True
 
         case "connect_call":
@@ -201,6 +202,9 @@ async def _handle_response_done(
                     "status": CallStatus.VERIFIED,
                     "data": {"name": shared_state.get("name")},
                 },
+            )
+            await force_model_continuation(
+                ws, "Verification passed. Connecting the call."
             )
     return False
 
