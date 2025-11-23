@@ -155,6 +155,11 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                                 await send_to_openai(openai_ws, base64_audio)
                             case "stop":
                                 print("Twilio stream has stopped")
+                                broadcast_event(
+                                    channel,
+                                    LiveEvent.STATUS,
+                                    {"status": "COMPLETED"},
+                                )
                 except WebSocketDisconnect:
                     print("Twilio webSocket disconnected")
                 finally:
