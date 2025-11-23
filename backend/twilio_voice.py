@@ -19,6 +19,7 @@ from openai_cookbook import (
     DEFAULT_SILENCE_DURATION_MS,
     DEFAULT_PREFIX_PADDING_MS,
 )
+from supabase_utils import create_async_supabase_client, broadcast_event
 
 load_dotenv()
 TWILIO_API_SID = os.getenv("TWILIO_API_SID")
@@ -101,6 +102,10 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
         # "OpenAI-Beta": "realtime=v1",
     }
 
+    supabase = await create_async_supabase_client()
+    channel = supabase.channel("live_call")
+    await channel.subscribe()
+
     try:
         async with websockets.connect(
             url, additional_headers=headers, proxy=None, max_size=None
@@ -142,12 +147,14 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
             # send AI response to Twilio
             async def send_ai_response():
                 nonlocal stream_sid
+
+                buffers: dict[str, str] = {}
+                transcription_buffers: dict[str, str] = {}
+
                 try:
                     async for raw_message in openai_ws:
                         openai_response = json.loads(raw_message)
                         openai_message_type = openai_response.get("type")
-
-                        print(f"← OpenAI: {openai_message_type}")
 
                         if openai_message_type == "input_audio_buffer.speech_started":
                             print(
@@ -162,6 +169,28 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                                 "[client] Detected silence; preparing transcript...",
                                 flush=True,
                             )
+
+                        elif (
+                            openai_message_type
+                            == "conversation.item.input_audio_transcription.completed"
+                        ):
+                            item_id = openai_response.get("item_id", "default")
+                            transcript = openai_response.get("transcript", "").strip()
+
+                            # If no transcript in the completed event, use buffered deltas
+                            if not transcript:
+                                transcript = transcription_buffers.pop(
+                                    item_id, ""
+                                ).strip()
+                            else:
+                                transcription_buffers.pop(item_id, None)
+
+                            if transcript:
+                                print("\n=== User turn (Transcription) ===\n")
+                                print(transcript)
+                                broadcast_event(
+                                    channel, "transcript", {"text": transcript}
+                                )
 
                         elif openai_message_type == "response.output_audio.delta":
                             response_id = openai_response.get("response_id")
@@ -178,6 +207,47 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                                 "media": {"payload": openai_response["delta"]},
                             }
                             await twilio_ws.send_json(audio_data)
+
+                        elif openai_message_type == "response.output_text.delta":
+                            response_id = openai_response.get("response_id")
+                            if response_id:
+                                buffers[response_id] = buffers.get(response_id, "") + openai_response.get("delta", "")
+
+                        elif (
+                            openai_message_type
+                            == "response.output_audio_transcript.delta"
+                        ):
+                            response_id = openai_response.get("response_id")
+                            if response_id:
+                                buffers[response_id] = buffers.get(response_id, "") + openai_response.get("delta", "")
+
+                        elif openai_message_type == "response.done":
+                            response = openai_response.get("response", {})
+                            response_id = response.get("id")
+                            if not response_id:
+                                continue
+
+                            text = buffers.get(response_id, "").strip()
+
+                            if text:
+                                print("\n=== assistant response ===\n")
+                                print(text)
+
+                            output = response.get("output")
+                            if (
+                                output
+                                and len(output) > 0
+                                and output[0].get("type") == "function_call"
+                            ):
+                                name = output[0].get("name")
+                                args = json.loads(output[0].get("arguments", "{}"))
+                                if name == "report_threat":
+                                    broadcast_event(
+                                        channel,
+                                        "threat_detected",
+                                        {**args, "status": "THREAT_DETECTED"},
+                                    )
+                                    print(f"🚨 Threat detected: {args}", flush=True)
 
                         elif openai_message_type == "error":
                             print(
