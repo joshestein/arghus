@@ -4,7 +4,7 @@ import os
 from enum import StrEnum
 
 from realtime import AsyncRealtimeChannel
-from supabase import acreate_client, create_client
+from supabase import acreate_client, create_client, AsyncClient
 
 REALTIME_CHANNEL_NAME = "live"
 
@@ -59,32 +59,27 @@ def broadcast_event(channel: AsyncRealtimeChannel, event: LiveEvent, payload: di
     asyncio.create_task(channel.send_broadcast(event, payload))
 
 
-async def fetch_challenge(
-    supabase: AsyncRealtimeChannel, name: str
-) -> dict[str, str] | None:
+async def fetch_challenge(supabase: AsyncClient, name: str) -> dict[str, str] | None:
     """Fetches security question and answer for `name` from Supabase."""
     name = name.lower()
-    logger.debug(f"Fetching challenge for {name}")
+    print(f"Fetching challenge for {name}")
 
-    # TODO: dynamic fetch
+    try:
+        response = (
+            await supabase.table("vault_secrets")
+            .select("*")
+            .eq("contact_name", name)
+            .execute()
+        )
+        data = response.data
 
-    if name == "mom":
-        return {
-            "question": "What was our favourite beach you grew up going to?",
-            "answer": "Muizenberg",  # real playas know
-        }
-
-    elif name == "dad":
-        return {
-            "question": "What was our first dog's name?",
-            "answer": "Maximillian",  # lol never
-        }
-
-    elif name == "david":
-        return {
-            "question": "What colour do we agree is the best jelly bean?",
-            "answer": "Purple",
-        }
+        if data and len(data) > 0:
+            return {
+                "question": data[0]["question"],
+                "answer": data[0]["answer"],
+            }
+    except Exception as e:
+        logger.error(f"Error fetching challenge from Supabase: {e}")
 
     return {
         "question": "When does Gandalf arrive?",
