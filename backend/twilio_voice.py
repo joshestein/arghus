@@ -141,7 +141,7 @@ async def _handle_response_done(
 ):
     """Handle the 'response.done' event from OpenAI Realtime API.
 
-    :return True if the call is being connected, False otherwise.
+    :return True if the ws connection should be closed, False otherwise.
     """
     response = openai_response.get("response", {})
     response_id = response.get("id")
@@ -176,7 +176,7 @@ async def _handle_response_done(
         case "hangup":
             print("FAILED. Hanging up.")
             broadcast_event(channel, LiveEvent.STATUS, {"status": "FAILED"})
-            # TODO: implement hangup via Twilio API
+            return True
         case "connect_call":
             print("VERIFIED! Connecting user...")
             broadcast_event(channel, LiveEvent.STATUS, {"status": "VERIFIED"})
