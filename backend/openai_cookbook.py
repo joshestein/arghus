@@ -18,7 +18,7 @@ from utils.realtime_utils import (
     DEFAULT_PREFIX_PADDING_MS,
     build_local_session,
 )
-from utils.supabase_utils import broadcast_event, LiveEvent
+from utils.supabase_utils import broadcast_event, LiveEvent, fetch_challenge
 
 load_dotenv()
 
@@ -117,7 +117,7 @@ async def stream_microphone_audio(
 
 
 async def _handle_response_done(
-    message: dict, buffers: defaultdict[str, str], shared_state: dict
+    ws, message: dict, buffers: defaultdict[str, str], shared_state: dict
 ):
     """Handle the 'response.done' event from OpenAI Realtime API."""
     response = message.get("response", {})
@@ -153,13 +153,35 @@ async def _handle_response_done(
             )
             print(f"🚨 Threat detected: {args}", flush=True)
 
+        case "lookup_identity":
+            name = args.get("name", "unknown")
+            print(f"Looking up identity for: {name}")
+
+            data = await fetch_challenge(shared_state.get("supabase_client"), name)
+            broadcast_event(channel, LiveEvent.STATUS, {"status": "CHALLENGING"})
+
+            function_output_event = {
+                "type": "conversation.item.create",
+                "item": {
+                    "type": "message",
+                    "content": {
+                        "text": json.dumps(data),
+                    },
+                },
+            }
+            await ws.send(json.dumps(function_output_event))
+            # Trigger response
+            await ws.send(json.dumps({"type": "response.create"}))
+
         case "hangup":
             print("FAILED. Hanging up.")
             broadcast_event(channel, LiveEvent.STATUS, {"status": "FAILED"})
             return True
+
         case "connect_call":
             print("VERIFIED! Connecting user...")
             broadcast_event(channel, LiveEvent.STATUS, {"status": "VERIFIED"})
+    return False
 
 
 async def listen_for_events(
@@ -241,7 +263,7 @@ async def listen_for_events(
 
         elif message_type == "response.done":
             should_end_call = await _handle_response_done(
-                message, buffers, shared_state
+                ws, message, buffers, shared_state
             )
 
             if should_end_call:
