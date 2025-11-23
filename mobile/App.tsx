@@ -183,6 +183,7 @@ const MainPage = () => {
             <Text style={styles.failedLabel}>STATUS:</Text>
             <Text style={styles.failedText}>Call blocked - you were protected</Text>
           </View>
+          {/* TODO: display transcript of failed verification attempt */}
         </View>
       );
     }
