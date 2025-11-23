@@ -329,7 +329,6 @@ async def _send_ai_response(
 async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
     await twilio_ws.accept()
 
-    shared_state = {"stream_sid": None, "call_sid": None}
     url = "wss://api.openai.com/v1/realtime?model=gpt-realtime"
 
     headers = {
@@ -341,6 +340,7 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
     channel = supabase.channel(REALTIME_CHANNEL_NAME)
     await channel.subscribe()
 
+    shared_state = {"stream_sid": None, "call_sid": None, "supabase_client": supabase}
     broadcast_event(channel, LiveEvent.STATE, {"status": CallStatus.IDLE})
 
     print("Connecting to OpenAI Realtime API...")
