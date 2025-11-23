@@ -106,6 +106,13 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
     channel = supabase.channel("live_call")
     await channel.subscribe()
 
+    broadcast_event(channel, "status", {"status": "IDLE"})
+
+    print("Connecting to OpenAI Realtime API...")
+    await asyncio.sleep(2)
+
+    broadcast_event(channel, "status", {"status": "RINGING"})
+
     try:
         async with websockets.connect(
             url, additional_headers=headers, proxy=None, max_size=None
@@ -134,6 +141,9 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                             case "start":
                                 stream_sid = data["start"]["streamSid"]
                                 print("Twilio stream started:", stream_sid)
+                                broadcast_event(
+                                    channel, "status", {"status": "ANALYZING"}
+                                )
                             case "media":
                                 base64_audio = data["media"]["payload"]
                                 await send_to_openai(openai_ws, base64_audio)
