@@ -6,7 +6,7 @@ from realtime import AsyncRealtimeChannel
 from supabase import Client, AsyncClient
 
 from openai_cookbook import run_realtime_session
-from supabase_utils import (
+from utils.supabase import (
     create_async_supabase_client,
     create_supabase_client,
     broadcast_event,

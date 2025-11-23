@@ -18,7 +18,7 @@ from utils.realtime import (
     DEFAULT_PREFIX_PADDING_MS,
     build_local_session,
 )
-from supabase_utils import broadcast_event, LiveEvent
+from utils.supabase import broadcast_event, LiveEvent
 
 load_dotenv()
 
