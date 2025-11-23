@@ -37,7 +37,7 @@ const MainPage = () => {
 
     liveCallChannel
       .on("broadcast", { event: "state" }, (data) => {
-        console.log('received status', data.payload.status);
+        console.log('received status', data.payload);
         setCallState(data.payload)
 
         if (data.payload.status === 'IDLE') {
