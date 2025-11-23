@@ -34,7 +34,7 @@ const MainPage = () => {
     liveCallChannel
       .on("broadcast", { event: "transcript" }, (data) => {
         if (status === 'THREAT_DETECTED') return; // Ignore further transcripts once threat detected
-        setTranscript(`${transcript}\n${data.payload.text}`);
+        setTranscript(prev => `${prev}\n${data.payload.text}`);
       })
       .subscribe();
 
