@@ -131,6 +131,8 @@ async def _handle_response_done(
         print("\n=== Assistant response ===\n")
         print(text)
 
+    channel = shared_state.get("supabase_channel")
+
     output = response.get("output")
     if not output or len(output) == 0:
         return False
@@ -183,6 +185,11 @@ async def listen_for_events(
         # --- User speech events ---
         if message_type == "input_audio_buffer.speech_started":
             print("\n[client] Speech detected; streaming...", flush=True)
+            broadcast_event(
+                shared_state.get("supabase_channel"),
+                LiveEvent.STATUS,
+                {"status": "ANALYZING"},
+            )
 
         elif message_type == "input_audio_buffer.speech_stopped":
             print("[client] Detected silence; preparing transcript...", flush=True)
