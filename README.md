@@ -28,7 +28,7 @@ the true caller.
 
 A picture says a thousand words, here's a demo:
 
-![demo](demo.mp4)
+https://github.com/user-attachments/assets/de61dcab-86d7-44b1-8d60-448db08b6ab3
 
 or https://www.loom.com/share/37636caab0874426b28875ad3af6dc1d
 
