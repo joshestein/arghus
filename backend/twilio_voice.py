@@ -129,6 +129,39 @@ async def _receive_twilio_stream(
         await openai_ws.close()
 
 
+async def _handle_response_done(openai_response: dict, buffers: dict, channel):
+    response = openai_response.get("response", {})
+    response_id = response.get("id")
+    if not response_id:
+        return
+
+    text = buffers.get(response_id, "").strip()
+
+    if text:
+        print("\n=== assistant response ===\n")
+        print(text)
+
+    output = response.get("output")
+    if not output or len(output) == 0:
+        return
+
+    name = output[0].get("name")
+    args = json.loads(output[0].get("arguments", "{}"))
+
+    match name:
+        case "report_threat":
+            broadcast_event(
+                channel,
+                LiveEvent.THREAT,
+                {
+                    **args,
+                    "status": "THREAT_DETECTED",
+                    "question": "What was our first dog's name?",
+                },
+            )
+            print(f"🚨 Threat detected: {args}", flush=True)
+
+
 async def _send_ai_response(
     twilio_ws, openai_ws: ClientConnection, channel, shared_state: dict
 ):
@@ -203,37 +236,7 @@ async def _send_ai_response(
                     ) + openai_response.get("delta", "")
 
             elif openai_message_type == "response.done":
-                response = openai_response.get("response", {})
-                response_id = response.get("id")
-                if not response_id:
-                    continue
-
-                text = buffers.get(response_id, "").strip()
-
-                if text:
-                    print("\n=== assistant response ===\n")
-                    print(text)
-
-                output = response.get("output")
-                if (
-                    output
-                    and len(output) > 0
-                    and output[0].get("type") == "function_call"
-                ):
-                    name = output[0].get("name")
-                    args = json.loads(output[0].get("arguments", "{}"))
-                    if name == "report_threat":
-                        broadcast_event(
-                            channel,
-                            LiveEvent.THREAT,
-                            {
-                                **args,
-                                "status": "THREAT_DETECTED",
-                                "question": "What was our first dog's name?",
-                            },
-                        )
-                        print(f"🚨 Threat detected: {args}", flush=True)
-
+                await _handle_response_done(openai_response, buffers, channel)
             elif openai_message_type == "error":
                 print(
                     f"[client] OpenAI error (full response):",
