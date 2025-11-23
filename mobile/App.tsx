@@ -5,7 +5,8 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "./lib/supabase";
 
 type Status = "IDLE" | "RINGING" | "ANALYZING" | "THREAT_DETECTED" | "CHALLENGING" | "VERIFIED" | "FAILED";
-type ThreatData = {
+
+type ThreatPayload = {
   question: string;
   transcript: string;
   reason: string;
@@ -13,35 +14,37 @@ type ThreatData = {
   name?: string;
 };
 
+type CallState = 
+  | { status: "IDLE"; data: null }
+  | { status: "RINGING"; data: null }
+  | { status: "ANALYZING"; data: null }
+  | { status: "THREAT_DETECTED"; data: ThreatPayload } 
+  | { status: "CHALLENGING"; data: ThreatPayload } 
+  | { status: "VERIFIED"; data: { name: string } }
+  | { status: "FAILED"; data: { name: string } };
+
 const MainPage = () => {
-  const [status, setStatus] = useState<Status>("IDLE");
-  const [threatData, setThreatData] = useState<ThreatData | null>(null);
+  const [callState, setCallState] = useState<CallState>({ status: "IDLE", data: null });
   const [transcript, setTranscript] = useState("");
 
   useEffect(() => {
     const liveCallChannel = supabase.channel("live");
 
     liveCallChannel
-      .on("broadcast", { event: "status" }, (data) => {
-        setStatus(data.payload.status);
+      .on("broadcast", { event: "state" }, (data) => {
+        console.log('received status', data.payload.status);
+        setCallState(data.payload)
+
         if (data.payload.status === 'IDLE') {
           setTranscript("");
-          setThreatData(null);
         }
       })
       .subscribe();
 
     liveCallChannel
       .on("broadcast", { event: "transcript" }, (data) => {
-        if (status === 'THREAT_DETECTED') return; // Ignore further transcripts once threat detected
+        if (callState.status === 'THREAT_DETECTED') return; // Ignore further transcripts once threat detected
         setTranscript(prev => `${prev}\n${data.payload.text}`);
-      })
-      .subscribe();
-
-    liveCallChannel
-      .on("broadcast", { event: "threat" }, (data) => {
-        setStatus("THREAT_DETECTED");
-        setThreatData(data.payload);
       })
       .subscribe();
 
@@ -51,6 +54,7 @@ const MainPage = () => {
   }, []);
 
   const renderContent = () => {
+    const { status, data } = callState;
     if (status === "IDLE") {
       return (
         <View style={styles.centerContent}>
@@ -82,7 +86,7 @@ const MainPage = () => {
       );
     }
 
-    if (status === "THREAT_DETECTED" && threatData) {
+    if (status === "THREAT_DETECTED") {
       return (
         <View style={styles.activeContent}>
           {/* Threat Card */}
@@ -91,36 +95,28 @@ const MainPage = () => {
               <Text style={{ fontSize: 30 }}>⚠️</Text>
               <View style={{ marginLeft: 10 }}>
                 <Text style={styles.threatTitle}>RISK DETECTED</Text>
-                {threatData.name && <Text style={styles.threatName}>{threatData.name}</Text>}
-                <Text style={styles.threatSubtitle}>Confidence Score: {threatData.confidence}%</Text>
+                {data.name && <Text style={styles.threatName}>{data.name}</Text>}
+                <Text style={styles.threatSubtitle}>Confidence Score: {data.confidence}%</Text>
               </View>
             </View>
 
             <View style={styles.divider} />
 
             <Text style={styles.reasonLabel}>ANALYSIS:</Text>
-            <Text style={styles.reasonText}>{threatData.reason}</Text>
+            <Text style={styles.reasonText}>{data.reason}</Text>
           </View>
 
           {/* Transcript Preview (Dimmed) */}
           <View style={[styles.transcriptContainer, { opacity: 0.5, marginBottom: 0 }]}>
             <ScrollView style={styles.transcriptBox} contentContainerStyle={{ paddingBottom: 20 }}>
-              <Text style={styles.transcriptText}>{threatData.transcript}</Text>
+              <Text style={styles.transcriptText}>{data.transcript}</Text>
             </ScrollView>
-          </View>
-
-          {/* Recommendation / Action */}
-          <View style={styles.actionArea}>
-            <Text style={styles.actionLabel}>INTERROGATION QUESTION</Text>
-            <View style={styles.questionBox}>
-              <Text style={styles.questionText}>{threatData.question}</Text>
-            </View>
           </View>
         </View>
       );
     }
 
-    if (status === "CHALLENGING" && threatData) {
+    if (status === "CHALLENGING") {
       return (
         <View style={styles.activeContent}>
           {/* Threat Card (Dimmed) */}
@@ -129,8 +125,8 @@ const MainPage = () => {
               <Text style={{ fontSize: 30 }}>⚠️</Text>
               <View style={{ marginLeft: 10 }}>
                 <Text style={styles.threatTitle}>RISK DETECTED</Text>
-                {threatData.name && <Text style={styles.threatName}>{threatData.name}</Text>}
-                <Text style={styles.threatSubtitle}>Confidence Score: {threatData.confidence}%</Text>
+                {data.name && <Text style={styles.threatName}>{data.name}</Text>}
+                <Text style={styles.threatSubtitle}>Confidence Score: {data.confidence}%</Text>
               </View>
             </View>
           </View>
@@ -142,7 +138,7 @@ const MainPage = () => {
               <Text style={styles.challengingTitle}>CHALLENGING CALLER</Text>
             </View>
             <View style={styles.questionBox}>
-              <Text style={styles.questionText}>{threatData.question}</Text>
+              <Text style={styles.questionText}>{data.question}</Text>
             </View>
           </View>
         </View>
@@ -157,7 +153,7 @@ const MainPage = () => {
               <Text style={{ fontSize: 30 }}>🛡️</Text>
               <View style={{ marginLeft: 10 }}>
                 <Text style={styles.verifiedTitle}>IDENTITY VERIFIED</Text>
-                {threatData?.name && <Text style={styles.verifiedName}>{threatData.name}</Text>}
+                {data.name && <Text style={styles.verifiedName}>{data.name}</Text>}
               </View>
             </View>
             <View style={styles.divider} />
@@ -176,7 +172,7 @@ const MainPage = () => {
               <Text style={{ fontSize: 30 }}>🛡️</Text>
               <View style={{ marginLeft: 10 }}>
                 <Text style={styles.failedTitle}>VERIFICATION FAILED</Text>
-                {threatData?.name && <Text style={styles.failedName}>{threatData.name}</Text>}
+                {data.name && <Text style={styles.failedName}>{data.name}</Text>}
               </View>
             </View>
             <View style={[styles.divider, { backgroundColor: "#ef4444" }]} />
@@ -196,9 +192,9 @@ const MainPage = () => {
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={styles.appName}>ARGHUS</Text>
-        <View style={[styles.badge, getStatusBadgeStyle(status)]}>
-          <View style={[styles.dot, { backgroundColor: getStatusColor(status) }]} />
-          <Text style={styles.badgeText}>{status.replace("_", " ")}</Text>
+        <View style={[styles.badge, getStatusBadgeStyle(callState.status)]}>
+          <View style={[styles.dot, { backgroundColor: getStatusColor(callState.status) }]} />
+          <Text style={styles.badgeText}>{callState.status.replace("_", " ")}</Text>
         </View>
       </View>
       <View style={styles.mainContainer}>{renderContent()}</View>
