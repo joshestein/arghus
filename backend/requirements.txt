@@ -1,8 +1,10 @@
 fastapi==0.121.3
+ngrok==1.6.0
 openai==2.8.1
 packaging==25.0
 python-dotenv==1.2.1
 realtime==2.24.0
+sounddevice==0.5.3
 supabase==2.24.0
 twilio==9.8.7
 uvicorn==0.38.0
