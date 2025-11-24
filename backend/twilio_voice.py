@@ -240,10 +240,8 @@ async def _handle_response_done(
 
                 try:
                     client.calls(call_sid).update(twiml=twiml_patch)
-                    return True
                 except TwilioRestException as err:
                     print(f"Error updating call TwiML: {err}", flush=True)
-                    return False
 
     return False
 
@@ -315,6 +313,8 @@ async def _send_ai_response(
                     openai_ws, openai_response, buffers, channel, shared_state
                 )
                 if patching_call:
+                    # Wait for any pending audio to be sent
+                    await asyncio.sleep(4)
                     await twilio_ws.close()
                     return
             elif openai_message_type == "error":
