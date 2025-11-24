@@ -53,17 +53,18 @@ When you setup an online account, you sometimes have to answer questions like
 approach is for two-person verification, but relies on a similar principle of
 knowing certain truths ahead-of-time.
 
-## Technical breakdown
+## Running
 
-There are two versions: one running 'properly', that you can actually call:
+You can call
 
 +15187223932 or +447450307731
 
-Go on then.
+_right now_ and experience the defense for yourself. Go on, have a scam.
 
-The other runs locally, using your computer mic. You have to download the repo
-and install dependencies etc.; maybe you want to do that? You will need to
-install `portaudio` separately to the Python deps.
+To my fellow South Africans: I couldn't get a Twilio number RICAed
+in time; forgive me.
+
+See [setup](#Setup) below to run locally.
 
 ### Part 1 - Firewall
 
@@ -105,19 +106,58 @@ Supabase: store shared secrets
 
 Expo / React Native: mobile app
 
-## Running
+## Setup
 
-Backend is deployed and listening.
+### Prerequisites
 
-You can call +15187223932 or +447450307731 _right now_ and talk to the AI
-(provided I still have credits ofc). To my fellow South Africans: I couldn't
-get a Twilio number RICAed in time; forgive me.
+- Python 3.13+
+- portaudio
+    - macOS: `brew install portaudio`
+    - Ubuntu/Debian: `apt-get install portaudio19-dev`
 
-Alternatively, clone the code and run `main.py` for an interactive version that
-runs locally, using your computer mic (as opposed to your phone).
+### Installation
 
-You can install the mobile app using Expo. It shows real-time progress as a
-call progresses.
+1. Clone, create venv, install reqs
+```bash
+git clone https://github.com/joshestein/arghus
+cd arghus/backend
+uv venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+2. Create an `.env` in `backend/` with the following secrets:
+```env
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
+OPENAI_API_KEY=
+
+TWILIO_API_SID=
+TWILIO_SECRET_KEY=
+TWILIO_ACCOUNT_SID=
+TWILIO_NUMBER_SID=
+USER_REAL_PHONE=
+
+NGROK_AUTH_TOKEN=
+NGROK_DOMAIN=
+```
+
+3. Setup Expo, follow the instructions: https://docs.expo.dev/get-started/set-up-your-environment/?mode=development-build&buildEnv=local
+
+4. Create a `.env.local` in `mobile/` with:
+```env
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+```
+
+### Running
+
+Backend:
+
+`python backend/main.py` for local mode (using computer mic) or `python backend/twilio_voice.py` for Twilio phone integration
+
+Frontend/mobile:
+
+`cd mobile && npx expo run`
 
 ## Future improvements
 
