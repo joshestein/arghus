@@ -1,6 +1,6 @@
-- [] connect caller at any time
-- [] hang up at any time
-- [] buffer and store transcript for full review
+- [ ] connect caller at any time
+- [ ] hang up at any time
+- [ ] buffer and store transcript for full review
 - [x] automatic 'challenge' mode
-- [] deduplicate logic between cookbook and twilio
-- [] reduce backend sharing state, it's really messy
+- [ ] deduplicate logic between cookbook and twilio
+- [ ] reduce backend sharing state, it's really messy
