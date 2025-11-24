@@ -18,8 +18,8 @@ You don't have a wallet, a phone, anything. Your mom is a little suspicious,
 but she knows you and she can hear the fear in your voice. What does she do
 when 'you' ask her to transfer money to the phone you're calling with?
 
-These sorts of scams are coming. Real-time conversations with a cloned voice
-scare me. So I wanted to build something to defend against them.
+These sorts of scams are coming. Cloned voices scare me. So I wanted to build
+something to defend against them.
 
 ## What
 
@@ -38,9 +38,9 @@ The root of my solution focuses on shared secrets between you and those you
 know. Yes, you could sit down with your Gran and figure out a codeword that you
 will both undoubtedly forget.
 
-Better is to have access to your comms using self-created bots that scrape your
-communications so that you have access to recent information between the two of
-you.
+Better is to use self-created bots that scrape your communications so that you
+have access to recent information between the two of you. Scammer and AIs don't
+know your recent interactions, so we can block them.
 
 For example, you and I have a private Slack DM where we exchange articles and
 rant to each other about our boss. If I ask you a question about an article you
@@ -57,14 +57,13 @@ knowing certain truths ahead-of-time.
 
 There are two versions: one running 'properly', that you can actually call:
 
-+15187223932
-or
-+447450307731
++15187223932 or +447450307731
 
 Go on then.
 
 The other runs locally, using your computer mic. You have to download the repo
-and install dependencies etc.; maybe you want to do that?
+and install dependencies etc.; maybe you want to do that? You will need to
+install `portaudio` separately to the Python deps.
 
 ### Part 1 - Firewall
 
