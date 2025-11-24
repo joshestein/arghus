@@ -45,33 +45,36 @@ NGROK_DOMAIN = os.getenv("NGROK_DOMAIN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 PORT = int(os.getenv("PORT", "8080"))
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup code here
-    print("Setting up ngrok tunnel...")
-    listener = await ngrok.forward(
-        addr=PORT,
-        proto="http",
-        authtoken=NGROK_AUTH_TOKEN,
-        domain=NGROK_DOMAIN,
-    )
-    print(listener.url())
-    twilio_phone = client.incoming_phone_numbers(TWILIO_NUMBER_SID).update(
-        voice_url=listener.url() + "/voice"
-    )
-    print("Twilio voice URL: ", twilio_phone.voice_url)
+    if ENVIRONMENT != "production":
+        print("Setting up ngrok tunnel...")
+        listener = await ngrok.forward(
+            addr=PORT,
+            proto="http",
+            authtoken=NGROK_AUTH_TOKEN,
+            domain=NGROK_DOMAIN,
+        )
+        print(listener.url())
+        twilio_phone = client.incoming_phone_numbers(TWILIO_NUMBER_SID).update(
+            voice_url=listener.url() + "/voice"
+        )
+        print("Twilio voice URL: ", twilio_phone.voice_url)
 
-    try:
+        try:
+            yield
+        except asyncio.CancelledError:
+            print("Lifespan cancelled")
+        except KeyboardInterrupt:
+            print("Lifespan interrupted by keyboard")
+        finally:
+            print("Closing ngrok tunnel...")
+            ngrok.disconnect()
+    else:
         yield
-    except asyncio.CancelledError:
-        print("Lifespan cancelled")
-    except KeyboardInterrupt:
-        print("Lifespan interrupted by keyboard")
-    finally:
-        print("Closing ngrok tunnel...")
-        ngrok.disconnect()
 
 
 app = FastAPI(lifespan=lifespan)

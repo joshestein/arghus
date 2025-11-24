@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: .
+    restart: always
+    environment:
+      - PORT=8080
+      - ENVIRONMENT=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+      - TWILIO_API_SID=${TWILIO_API_SID}
+      - TWILIO_SECRET_KEY=${TWILIO_SECRET_KEY}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_NUMBER_SID=${TWILIO_NUMBER_SID}
+      - USER_REAL_PHONE=${USER_REAL_PHONE}
+
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - backend
+volumes:
+  caddy_data:
