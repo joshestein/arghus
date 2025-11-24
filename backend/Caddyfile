@@ -1,3 +1,6 @@
 arghus.joshstein.io {
-    reverse_proxy backend:8080
+    reverse_proxy backend:8080 {
+        # Flush interval for real-time streaming
+        flush_interval -1
+    }
 }
