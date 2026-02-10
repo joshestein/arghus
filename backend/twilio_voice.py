@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import HTMLResponse
 from fastapi.websockets import WebSocketDisconnect
-from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 from websockets import ClientConnection
@@ -45,6 +44,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 PORT = int(os.getenv("PORT", "8080"))
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+call_actions = {}
 
 
 @asynccontextmanager
@@ -95,6 +96,29 @@ def voice(request: Request):
     connect.append(stream)
     response.append(connect)
 
+    response.redirect(f"https://{request.url.hostname}/post-stream")
+
+    return HTMLResponse(content=str(response), media_type="application/xml")
+
+
+@app.api_route("/post-stream", methods=["GET", "POST"])
+async def post_stream(request: Request):
+    form = await request.form()
+    call_sid = form.get("CallSid")
+    action = call_actions.pop(call_sid, None)
+    print(
+        f"Call {call_sid} has ended streaming audio, action: {action}. Redirecting to post-stream endpoint."
+    )
+    response = VoiceResponse()
+    match action:
+        case "hangup":
+            response.hangup()
+        case "connect":
+            response.say("Connecting you to Josh now.")
+            response.dial(USER_REAL_PHONE)
+        case _:
+            response.say("Thank you for calling. Goodbye.")
+            response.hangup()
     return HTMLResponse(content=str(response), media_type="application/xml")
 
 
@@ -274,25 +298,9 @@ async def _send_ai_response(
                     action = shared_state.get("call_action")
 
                     if call_sid and action:
-                        try:
-                            if action == "hangup":
-                                print(f"Ending call {call_sid}...", flush=True)
-                                client.calls(call_sid).update(status="completed")
-                                print(f"Call ended successfully", flush=True)
-                            elif action == "connect":
-                                print(
-                                    f"Redirecting call {call_sid} to dial...",
-                                    flush=True,
-                                )
-                                twiml_patch = f"""<Response>
-                                   <Say>Connecting you to Josh now.</Say>
-                                   <Dial>{USER_REAL_PHONE}</Dial>
-                               </Response>"""
-                                client.calls(call_sid).update(twiml=twiml_patch)
-                                print(f"Call redirected successfully", flush=True)
-                        except TwilioRestException as err:
-                            print(f"Error updating call: {err}", flush=True)
-                    return
+                        call_actions[call_sid] = action
+                        await twilio_ws.close()
+                        return
             elif openai_message_type == "error":
                 print(
                     "[client] OpenAI error (full response):",
