@@ -169,43 +169,8 @@ async def _handle_response_done(
         return False
 
     name = output[0].get("name")
-    args = json.loads(output[0].get("arguments", "{}"))
 
     match name:
-        case "report_threat":
-            broadcast_event(
-                channel,
-                LiveEvent.STATE,
-                {"status": CallStatus.THREAT_DETECTED, "data": {**args}},
-            )
-            shared_state["name"] = args.get("name")
-            shared_state["confidence"] = args.get("confidence")
-
-            print(f"🚨 Threat detected: {args}", flush=True)
-            await force_model_continuation(ws, "Threat successfully reported.")
-
-        case "lookup_identity":
-            name = args.get("name", "unknown")
-            shared_state["name"] = name
-            print(f"Looking up identity for: {name}")
-
-            data = await fetch_challenge(shared_state.get("supabase_client"), name)
-            shared_state["question"] = data.get("question")
-
-            broadcast_event(
-                channel,
-                LiveEvent.STATE,
-                {
-                    "status": CallStatus.CHALLENGING,
-                    "data": {
-                        "name": name,
-                        "confidence": shared_state.get("confidence"),
-                        "question": data.get("question"),
-                    },
-                },
-            )
-            await force_model_continuation(ws, json.dumps(data))
-
         case "hangup":
             print("FAILED. Hanging up.")
             broadcast_event(
