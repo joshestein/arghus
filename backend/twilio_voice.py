@@ -21,14 +21,13 @@ from openai_cookbook import (
     DEFAULT_SILENCE_DURATION_MS,
     DEFAULT_PREFIX_PADDING_MS,
 )
-from utils.realtime_utils import build_twilio_session, force_model_continuation
+from utils.realtime_utils import build_twilio_session
 from utils.supabase_utils import (
     create_async_supabase_client,
     broadcast_event,
     REALTIME_CHANNEL_NAME,
     LiveEvent,
     CallStatus,
-    fetch_challenge,
 )
 
 load_dotenv()
