@@ -165,6 +165,9 @@ async def _handle_response_done(
     if not output or len(output) == 0:
         return False
 
+    if output[0].get("type") != "function_call":
+        return False
+
     name = output[0].get("name")
     args = json.loads(output[0].get("arguments", "{}"))
 
