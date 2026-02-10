@@ -54,8 +54,8 @@ Greeting -> Listening -> Scam Detection -> Verification -> Resolution
     d. Say: "Please answer the following question to proceed."
     e. Ask the retrieved security question
     
-- If the user answers the security question correctly, say: "Thank you!". Then call the `connect_call` function.
-- If the user answers incorrectly,say: "Verification failed. Ending the call.". Then call the `hangup` function.
+- If the user answers the security question correctly, immediately call the `connect_call` function. Do not say anything first.
+- If the user answers incorrectly, immediately call the `hangup` function. Do not say anything first.
 """
 
 DEFAULT_VOICE = "marin"
