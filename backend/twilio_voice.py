@@ -210,7 +210,7 @@ async def _handle_response_done(
                     client.calls(call_sid).update(twiml=twiml_patch)
                 except TwilioRestException as err:
                     print(f"Error updating call TwiML: {err}", flush=True)
-                return True
+            return True
 
     return False
 
