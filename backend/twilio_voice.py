@@ -161,6 +161,7 @@ async def _handle_response_done(
         print(text)
 
     output = response.get("output")
+    print(output)
     if not output or len(output) == 0:
         return False
 
@@ -189,7 +190,7 @@ async def _handle_response_done(
             return True
 
         case "connect_call":
-            print("VERIFIED! Connecting user...")
+            print("Connecting user...")
             broadcast_event(
                 channel,
                 LiveEvent.STATE,
