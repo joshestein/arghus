@@ -61,13 +61,13 @@ TOOLS = [
     {
         "type": "function",
         "name": "connect_call",
-        "description": "Call this when the user answers the security question correctly.",
+        "description": "Call this to connect the caller with Josh.",
         "parameters": {"type": "object", "properties": {}},
     },
     {
         "type": "function",
         "name": "hangup",
-        "description": "Call this when verification fails.",
+        "description": "Call this to hangup.",
         "parameters": {"type": "object", "properties": {}},
     },
 ]
