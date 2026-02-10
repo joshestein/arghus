@@ -161,43 +161,44 @@ async def _handle_response_done(
         print(text)
 
     output = response.get("output")
-    print(output)
     if not output or len(output) == 0:
         return False
 
-    if output[0].get("type") != "function_call":
-        return False
+    # Look for function calls in the output (there may be multiple items)
+    for item in output:
+        if item.get("type") != "function_call":
+            continue
 
-    name = output[0].get("name")
+        name = item.get("name")
 
-    match name:
-        case "hangup":
-            print("FAILED. Hanging up.")
-            broadcast_event(
-                channel,
-                LiveEvent.STATE,
-                {
-                    "status": CallStatus.FAILED,
-                    "data": {"name": shared_state.get("name")},
-                },
-            )
-            # Store action to execute after WebSocket closes
-            shared_state["call_action"] = "hangup"
-            return True
+        match name:
+            case "hangup":
+                print("FAILED. Hanging up.")
+                broadcast_event(
+                    channel,
+                    LiveEvent.STATE,
+                    {
+                        "status": CallStatus.FAILED,
+                        "data": {"name": shared_state.get("name")},
+                    },
+                )
+                # Store action to execute after WebSocket closes
+                shared_state["call_action"] = "hangup"
+                return True
 
-        case "connect_call":
-            print("Connecting user...")
-            broadcast_event(
-                channel,
-                LiveEvent.STATE,
-                {
-                    "status": CallStatus.VERIFIED,
-                    "data": {"name": shared_state.get("name")},
-                },
-            )
-            # Store action to execute after WebSocket closes
-            shared_state["call_action"] = "connect"
-            return True
+            case "connect_call":
+                print("Connecting user...")
+                broadcast_event(
+                    channel,
+                    LiveEvent.STATE,
+                    {
+                        "status": CallStatus.VERIFIED,
+                        "data": {"name": shared_state.get("name")},
+                    },
+                )
+                # Store action to execute after WebSocket closes
+                shared_state["call_action"] = "connect"
+                return True
 
     return False
 
@@ -286,7 +287,10 @@ async def _send_ai_response(
                                 client.calls(call_sid).update(status="completed")
                                 print(f"Call ended successfully", flush=True)
                             elif action == "connect":
-                                print(f"Redirecting call {call_sid} to dial...", flush=True)
+                                print(
+                                    f"Redirecting call {call_sid} to dial...",
+                                    flush=True,
+                                )
                                 twiml_patch = f"""<Response>
                                    <Say>Connecting you to Josh now.</Say>
                                    <Dial>{USER_REAL_PHONE}</Dial>
