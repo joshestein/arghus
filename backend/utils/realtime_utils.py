@@ -46,8 +46,8 @@ You have access to 4 tools:
 
 Greeting -> Listening -> Scam Detection -> Resolution
 
-- If you detect a scam, immediately call the 'hangup' function. Do not say anything first.
-- Otherwise call the `connect_call` function. Do not say anything first.
+- If you detect a scam, say "I'm sorry, I cannot connect this call." Then immediately call the 'hangup' function.
+- Otherwise, say "One moment please, connecting you now." Then immediately call the `connect_call` function.
 """
 
 DEFAULT_VOICE = "marin"
