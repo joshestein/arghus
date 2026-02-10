@@ -181,12 +181,8 @@ async def _handle_response_done(
                     "data": {"name": shared_state.get("name")},
                 },
             )
-            call_sid = shared_state.get("call_sid")
-            if call_sid:
-                twiml_patch = f"""<Response>
-                   <Say>Verification failed. Goodbye.</Say>
-               </Response>"""
-                client.calls(call_sid).update(twiml=twiml_patch)
+            # Store action to execute after WebSocket closes
+            shared_state["call_action"] = "hangup"
             return True
 
         case "connect_call":
@@ -199,17 +195,8 @@ async def _handle_response_done(
                     "data": {"name": shared_state.get("name")},
                 },
             )
-            call_sid = shared_state.get("call_sid")
-            if call_sid:
-                twiml_patch = f"""<Response>
-                   <Say>Identity verified. Connecting you now.</Say>
-                   <Dial>{USER_REAL_PHONE}</Dial>
-               </Response>"""
-
-                try:
-                    client.calls(call_sid).update(twiml=twiml_patch)
-                except TwilioRestException as err:
-                    print(f"Error updating call TwiML: {err}", flush=True)
+            # Store action to execute after WebSocket closes
+            shared_state["call_action"] = "connect"
             return True
 
     return False
@@ -278,13 +265,36 @@ async def _send_ai_response(
                     ) + openai_response.get("delta", "")
 
             elif openai_message_type == "response.done":
-                patching_call = await _handle_response_done(
+                should_end_call = await _handle_response_done(
                     openai_ws, openai_response, buffers, channel, shared_state
                 )
-                if patching_call:
-                    # Wait for any pending audio to be sent
-                    await asyncio.sleep(4)
+                if should_end_call:
+                    # Close WebSocket to release the <Connect><Stream>
                     await twilio_ws.close()
+
+                    # Wait for WebSocket to fully close
+                    await asyncio.sleep(1)
+
+                    # Now execute the stored action
+                    call_sid = shared_state.get("call_sid")
+                    action = shared_state.get("call_action")
+
+                    if call_sid and action:
+                        try:
+                            if action == "hangup":
+                                print(f"Ending call {call_sid}...", flush=True)
+                                client.calls(call_sid).update(status="completed")
+                                print(f"Call ended successfully", flush=True)
+                            elif action == "connect":
+                                print(f"Redirecting call {call_sid} to dial...", flush=True)
+                                twiml_patch = f"""<Response>
+                                   <Say>Connecting you to Josh now.</Say>
+                                   <Dial>{USER_REAL_PHONE}</Dial>
+                               </Response>"""
+                                client.calls(call_sid).update(twiml=twiml_patch)
+                                print(f"Call redirected successfully", flush=True)
+                        except TwilioRestException as err:
+                            print(f"Error updating call: {err}", flush=True)
                     return
             elif openai_message_type == "error":
                 print(
