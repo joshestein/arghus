@@ -270,13 +270,6 @@ async def _send_ai_response(
                     openai_ws, openai_response, buffers, channel, shared_state
                 )
                 if should_end_call:
-                    # Close WebSocket to release the <Connect><Stream>
-                    await twilio_ws.close()
-
-                    # Wait for WebSocket to fully close
-                    await asyncio.sleep(1)
-
-                    # Now execute the stored action
                     call_sid = shared_state.get("call_sid")
                     action = shared_state.get("call_action")
 
