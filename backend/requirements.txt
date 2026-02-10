@@ -3,7 +3,7 @@ ngrok==1.6.0
 openai==2.8.1
 packaging==25.0
 python-dotenv==1.2.1
-python-multpart==0.0.22
+python-multipart==0.0.22
 realtime==2.24.0
 sounddevice==0.5.3
 supabase==2.24.0
