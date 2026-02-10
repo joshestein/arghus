@@ -350,6 +350,7 @@ async def stream_audio(twilio_ws: WebSocket, language: str = "en-US"):
                 idle_timeout_ms=None,
             )
             await openai_ws.send(json.dumps(session_update))
+            await openai_ws.send(json.dumps({"type": "response.create"}))
             await asyncio.gather(
                 _receive_twilio_stream(twilio_ws, openai_ws, channel, shared_state),
                 _send_ai_response(twilio_ws, openai_ws, channel, shared_state),
